@@ -1,4 +1,4 @@
-#include "GKrig.h"
+#include "gkrig.h"
 #include <cstdio>
 #include <iostream>
 #include <fstream>

@@ -1,9 +1,8 @@
-#include "kriging.h"
+#include "../model/kriging.h"
 #include <math.h>
 #include <iostream>
 #include <stdio.h>
 #include <time.h>
-#include <Windows.h>
 #include <stdlib.h>
 #include <stddef.h>
 #include <string.h>
@@ -1924,48 +1923,3 @@ int Kriging::mle_beta_sigma(double *val)
 	return(0);
 
 }/** kriging_mle_beta_sigma **/
-
-/*******************************************************************************
-* Function: random permutation of vector entries
-* Date    : 2009-10-21  $
-* Author  : Benjamin Rosenbaum $
-*******************************************************************************/
-int permutation_of_vector(double* array, int n)
-{
-	int i, j;
-	double dummy;
-	struct timeval zeit;
-	int     gettimeofday(struct timeval *tp, void *tzp);
-
-	for (i = 0; i < n; i++)
-	{
-		gettimeofday(&zeit, NULL);
-		srand(zeit.tv_usec);
-		j = rand() % n;
-		dummy = array[i];
-		array[i] = array[j];
-		array[j] = dummy;
-	}
-	return 0;
-}/** permutation_of_vector **/
-int gettimeofday(struct timeval *tp, void *tzp)
-{
-	time_t clock;
-	struct tm tm;
-	SYSTEMTIME wtm;
-
-	GetLocalTime(&wtm);
-	tm.tm_year = wtm.wYear - 1900;
-	tm.tm_mon = wtm.wMonth - 1;
-	tm.tm_mday = wtm.wDay;
-	tm.tm_hour = wtm.wHour;
-	tm.tm_min = wtm.wMinute;
-	tm.tm_sec = wtm.wSecond;
-	tm.tm_isdst = -1;
-	clock = mktime(&tm);
-	tp->tv_sec = clock;
-	tp->tv_usec = wtm.wMilliseconds * 1000;
-
-	return (0);
-}
-

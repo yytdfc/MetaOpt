@@ -1,4 +1,4 @@
-#include "Powell.h"
+#include "powell.h"
 #include <iostream>
 #include <cmath>
 #include <random>
@@ -163,7 +163,7 @@ void Powell::LineSearch(double *x, double *direc){
 	double fa,f,fb,xb,xa = 0.0;
 	double xmin,xx = 1.0;
 	double *tempx=new double[nv+1];
-	FUNC1D func1d=tr1::bind<double>(&Powell::f1dim2,this,tr1::placeholders::_1,x,direc,tempx);
+	FUNC1D func1d=bind<double>(&Powell::f1dim2,this,placeholders::_1,x,direc,tempx);
 	Mnbrak(xa, xx, xb, fa, f, fb, func1d);
 	x[nv] = Brent(xa, xx, xb, tol, xmin, func1d);
 	for (j = 0; j<nv; j++){

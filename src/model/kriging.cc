@@ -9,6 +9,7 @@
 #include <string>
 #define TINYa 1.0e-20
 
+
 double Kriging::predictorEI(double *x){
 	double s, dy;
 	setPredict(0);
@@ -235,7 +236,7 @@ void Kriging::allocate()
 			np = 2 * (porder + n_dim);
 	}
 	else{
-		printf("\n Currently no such regression functionalitiy,_porder = %d \n",
+		printf("\n Currently no such regression functionitiy,_porder = %d \n",
 			porder);
 		porder = 0;
 		if (cokrig == 0)

@@ -1,4 +1,4 @@
-#include "Sample.h"
+#include "doe.h"
 #include <iostream>
 #include <fstream>
 using namespace std;

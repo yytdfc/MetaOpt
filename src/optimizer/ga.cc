@@ -1,4 +1,4 @@
-#include "GA.h"
+#include "ga.h"
 #include <iostream>
 #include <fstream>
 using namespace std;

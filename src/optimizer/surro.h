@@ -1,11 +1,11 @@
-#include "GA.h"
-#include "Sample.h"
-#include "GKrig.h"
+#include "ga.h"
+#include "doe/doe.h"
+#include "model/gkrig.h"
 #include <string>
 #include <random>
 #include <vector>
 #include <ctime>
-typedef tr1::function< double(double *) > FUNC;
+typedef function< double(double *) > FUNC;
 class Surro {
 public:
 	void initialize(int nv, int nS, int init, int nCon, double *up, double *low, double(*f)(double *));

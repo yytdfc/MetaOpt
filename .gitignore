@@ -1,3 +1,7 @@
 .pyc
 .DS_Store
 __pycache__
+.o
+.so
+.a
+build/*

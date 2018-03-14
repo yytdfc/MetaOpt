@@ -3,8 +3,8 @@
 #include <random>
 #include <vector>
 #include <functional>
-typedef std::tr1::function< double (double *x) > FUNC;
-typedef std::tr1::function< double (double x) > FUNC1D;
+typedef std::function< double (double *x) > FUNC;
+typedef std::function< double (double x) > FUNC1D;
 class Powell {
 public:
 	Powell();
@@ -31,7 +31,7 @@ private:
 	FUNC func;
 	int nv;
 	double brackeRange;
-//	std::random_device rd;  //Ëæ»úÊýÉú³ÉÆ÷
+//	std::random_device rd;  //ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 	std::mt19937_64 gen;
 	///*return a random double in [0,1]*/
 	inline double randomDouble(){

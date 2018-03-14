@@ -1,7 +1,7 @@
 #include <string>
 #include <random>
 #include <functional>
-typedef std::tr1::function< double (double *) > FUNC;
+typedef std::function< double (double *) > FUNC;
 class GA {
 public:
 	~GA();

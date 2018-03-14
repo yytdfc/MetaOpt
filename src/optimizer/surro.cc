@@ -1,5 +1,4 @@
-#include "Surro.h"
-#include <functional>
+#include "surro.h"
 #include <fstream>
 #include <sstream>
 using namespace std;
@@ -143,7 +142,7 @@ void Surro::backupResult(){
 			}
 		}
 		fin.close();
-		cmd = "copy result.dat " + filename;
+		cmd = "cp result.dat " + filename;
 		cout << cmd << endl;
 		system(cmd.c_str());
 	}
@@ -321,23 +320,23 @@ void Surro::add(const int nadd){
 	krig.GKtraining();
 	if (nadd == 1){
 		krig.EI = best[nVar];
-		ga.setFx(tr1::bind(&GKrig::GKpredictorEI, &krig, tr1::placeholders::_1));
+		ga.setFx(bind(&GKrig::GKpredictorEI, &krig, placeholders::_1));
 		cout << "adding EI." << endl;
 	}
 	else if (nadd == 2){
-		ga.setFx(tr1::bind(&GKrig::GKpredictorMP, &krig, tr1::placeholders::_1));
+		ga.setFx(bind(&GKrig::GKpredictorMP, &krig, placeholders::_1));
 		cout << "adding MP." << endl;
 	}
 	else if (nadd == 3){
-		ga.setFx(tr1::bind(&GKrig::predictorME, &krig, tr1::placeholders::_1));
+		ga.setFx(bind(&GKrig::predictorME, &krig, placeholders::_1));
 		cout << "adding ME." << endl;
 	}
 	else if (nadd == 4){
-		ga.setFx(tr1::bind(&GKrig::predictorPI, &krig, tr1::placeholders::_1));
+		ga.setFx(bind(&GKrig::predictorPI, &krig, placeholders::_1));
 		cout << "adding PI." << endl;
 	}
 	else if (nadd == 5){
-		ga.setFx(tr1::bind(&GKrig::predictorLCB, &krig, tr1::placeholders::_1));
+		ga.setFx(bind(&GKrig::predictorLCB, &krig, placeholders::_1));
 		cout << "adding LCB." << endl;
 	}
 	ga.evolve();
