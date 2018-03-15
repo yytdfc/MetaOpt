@@ -30,7 +30,7 @@ class Surro
   void setFx(Real(Real* x));
   void setGKrigFx(Real(Real* x));
   void backupResult();
-  int  nVar;
+  int  n_dim_;
   int  nCons;
   int  nInit;
   int  nSample;

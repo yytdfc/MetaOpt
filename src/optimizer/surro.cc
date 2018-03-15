@@ -10,7 +10,7 @@ template class Surro<double>;
 template <typename Real>
 void Surro<Real>::setFx(Real f(Real* x)) {
   fx = f;
-  cout << "Opt Function setted." << endl;
+  LOG(INFO) << "Opt Function setted." << endl;
 }
 template <typename Real>
 void Surro<Real>::setGKrigFx(Real f(Real* x)) {
@@ -31,15 +31,15 @@ int Surro<Real>::readInput(string infile) {
   fin >> nProb >> isRestart >> restartFrom;
   getline(fin, line);
   getline(fin, line);
-  fin >> nVar >> nCons >> nSample >> addN;
+  fin >> n_dim_ >> nCons >> nSample >> addN;
   getline(fin, line);
   getline(fin, line);
   allocate();
   dealAdd();
-  for (i = 0; i < nVar; ++i)
+  for (i = 0; i < n_dim_; ++i)
     fin >> lower[i];
   getline(fin, line);
-  for (i = 0; i < nVar; ++i) {
+  for (i = 0; i < n_dim_; ++i) {
     fin >> upper[i];
     if (lower[i] > upper[i]) {
       swap(lower[i], upper[i]);  //	? unknow condition
@@ -68,13 +68,13 @@ int Surro<Real>::readInput(string infile) {
   krig_regular = 1;
   krig_out_points = 2;
   krig.EIcons = krig_EIcons;
-  Real* GAup = new Real[nVar];
-  Real* GAlow = new Real[nVar];
-  for (i = 0; i < nVar; ++i) {
+  Real* GAup = new Real[n_dim_];
+  Real* GAlow = new Real[n_dim_];
+  for (i = 0; i < n_dim_; ++i) {
     GAup[i] = 1;
     GAlow[i] = 0;
   }
-  ga.GAinit(nVar, ga_Pops, ga_Gens, nCons, ga_Pcr, ga_Pmu, GAup, GAlow);
+  ga.GAinit(n_dim_, ga_Pops, ga_Gens, nCons, ga_Pcr, ga_Pmu, GAup, GAlow);
   nNow = 0;
   delete[] GAup;
   delete[] GAlow;
@@ -136,7 +136,7 @@ void Surro<Real>::backupResult() {
       ss << i;
       ss << ".dat";
       ss >> filename;
-      cout << filename << endl;
+      LOG(INFO) << filename << endl;
       ss.clear();
       fin.open(filename);
       if (fin.is_open()) {
@@ -148,7 +148,7 @@ void Surro<Real>::backupResult() {
     }
     fin.close();
     cmd = "cp result.dat " + filename;
-    cout << cmd << endl;
+    LOG(INFO) << cmd << endl;
     system(cmd.c_str());
   }
   fin.close();
@@ -164,7 +164,7 @@ void Surro<Real>::dealRestart() {
     getline(fin, s);
     getline(fin, s);
     while (fin >> num) {
-      cout << num << endl;
+      LOG(INFO) << num << endl;
       if (check != num) {
         cerr << "Error in restarting!" << endl;
         exit(0);
@@ -176,16 +176,16 @@ void Surro<Real>::dealRestart() {
       ++check;
     }
     nNow = num;
-    cout << "Restarting from " << nNow << " samples." << endl;
+    LOG(INFO) << "Restarting from " << nNow << " samples." << endl;
   } else {
     cerr << "Can't open " << restartFrom << endl;
   }
   fin.close();
-  best[nVar] = 1e9;
+  best[n_dim_] = 1e9;
   ofstream fout("result.dat");
   if (fout) {
     fout << "VARIABLES=num,x1";
-    for (i = 1; i < nVar; ++i)
+    for (i = 1; i < n_dim_; ++i)
       fout << ",x" << i + 1;
     fout << ",y";
     for (i = 0; i < nCons; ++i)
@@ -212,7 +212,7 @@ template <typename Real>
 void Surro<Real>::allocate() {
   int i;
   addMethod = new int[5];
-  vecLengh = nVar + nCons + 1;
+  vecLengh = n_dim_ + nCons + 1;
   sample = new Real*[nSample];
   sample[0] = new Real[nSample * vecLengh];
   for (i = 1; i < nSample; ++i) {
@@ -224,11 +224,11 @@ void Surro<Real>::allocate() {
   if (nCons > 0) {
     cons = new Real*[nSample];
     for (i = 0; i < nSample; ++i) {
-      cons[i] = sample[i] + nVar + 1;
+      cons[i] = sample[i] + n_dim_ + 1;
     }
   }
-  upper = new Real[nVar];
-  lower = new Real[nVar];
+  upper = new Real[n_dim_];
+  lower = new Real[n_dim_];
   isInit = true;
 }
 template <typename Real>
@@ -240,22 +240,22 @@ void Surro<Real>::initialize(int   nv,
                              Real* low,
                              std::function<Real(Real* x)> f) {
   int i;
-  nVar = nv;
+  n_dim_ = nv;
   nInit = init;
   nSample = nS;
   nCons = nCon;
   fx = f;
-  for (i = 0; i < nVar; ++i) {
+  for (i = 0; i < n_dim_; ++i) {
     upper[i] = up[i];
     lower[i] = low[i];
   }
-  Real* GAup = new Real[nVar];
-  Real* GAlow = new Real[nVar];
-  for (i = 0; i < nVar; ++i) {
+  Real* GAup = new Real[n_dim_];
+  Real* GAlow = new Real[n_dim_];
+  for (i = 0; i < n_dim_; ++i) {
     GAup[i] = 1;
     GAlow[i] = 0;
   }
-  ga.GAinit(nVar, ga_Pops, ga_Gens, nCons, ga_Pcr, ga_Pmu, GAup, GAlow);
+  ga.GAinit(n_dim_, ga_Pops, ga_Gens, nCons, ga_Pcr, ga_Pmu, GAup, GAlow);
   delete[] GAup;
   delete[] GAlow;
 }
@@ -279,9 +279,9 @@ template <typename Real>
 void Surro<Real>::getBest(const int& k) {
   bool flag = true;
   int  i;
-  if (sample[k][nVar] < best[nVar]) {
+  if (sample[k][n_dim_] < best[n_dim_]) {
     for (i = 0; i < nCons; ++i) {
-      if (sample[k][nVar + 1 + i] < 0) {
+      if (sample[k][n_dim_ + 1 + i] < 0) {
         flag = false;
       }
     }
@@ -290,19 +290,19 @@ void Surro<Real>::getBest(const int& k) {
         best[i] = sample[k][i];
       }
   }
-  convergence[k] = best[nVar];
+  convergence[k] = best[n_dim_];
 }
 template <typename Real>
 void Surro<Real>::initSample() {
   int i, j;
-  best[nVar] = 1e9;
-  Doe<Real> initSamp(nVar, nInit);
+  best[n_dim_] = 1e9;
+  Doe<Real> initSamp(n_dim_, nInit);
   initSamp.gen();
-  cout << "LHS samples generated." << endl;
+  LOG(INFO) << "LHS samples generated." << endl;
 
   for (i = 0; i < nInit; ++i) {
-    for (j = 0; j < nVar; ++j) {
-      sample[i][j] = lower[j] + initSamp.sample[j][i] * (upper[j] - lower[j]);
+    for (j = 0; j < n_dim_; ++j) {
+      sample[i][j] = lower[j] + initSamp.sample_[j][i] * (upper[j] - lower[j]);
     }
     fx(sample[i]);
     getBest(i);
@@ -322,41 +322,41 @@ void Surro<Real>::initSample() {
   }
 
   nNow = nInit;
-  cout << "Initial samples calculated." << endl;
+  LOG(INFO) << "Initial samples calculated." << endl;
 }
 
 template <typename Real>
 void Surro<Real>::add(const int nadd) {
   int i;
   krig.initialize(krig_corr, krig_const_theta, krig_porder, krig_norm,
-                  krig_dcmp, krig_ParaOpt, krig_regular, nVar, nNow,
+                  krig_dcmp, krig_ParaOpt, krig_regular, n_dim_, nNow,
                   krig_out_points, 1 + nCons, sample, upper, lower);
   krig.GKtraining();
   if (nadd == 1) {
-    krig.EI = best[nVar];
+    krig.EI = best[n_dim_];
     ga.setFx(bind(&GKrig<Real>::GKpredictorEI, &krig, placeholders::_1));
-    cout << "adding EI." << endl;
+    LOG(INFO) << "adding EI." << endl;
   } else if (nadd == 2) {
     ga.setFx(bind(&GKrig<Real>::GKpredictorMP, &krig, placeholders::_1));
-    cout << "adding MP." << endl;
+    LOG(INFO) << "adding MP." << endl;
   } else if (nadd == 3) {
     ga.setFx(bind(&GKrig<Real>::predictorME, &krig, placeholders::_1));
-    cout << "adding ME." << endl;
+    LOG(INFO) << "adding ME." << endl;
   } else if (nadd == 4) {
     ga.setFx(bind(&GKrig<Real>::predictorPI, &krig, placeholders::_1));
-    cout << "adding PI." << endl;
+    LOG(INFO) << "adding PI." << endl;
   } else if (nadd == 5) {
     ga.setFx(bind(&GKrig<Real>::predictorLCB, &krig, placeholders::_1));
-    cout << "adding LCB." << endl;
+    LOG(INFO) << "adding LCB." << endl;
   }
   ga.evolve();
   krig.destructor();
-  for (i = 0; i < nVar; ++i) {
+  for (i = 0; i < n_dim_; ++i) {
     sample[nNow][i] = lower[i] + ga.best[i] * (upper[i] - lower[i]);
   }
   fx(sample[nNow]);
   getBest(nNow);
-  cout << nNow << " samples best = " << best[nVar] << endl;
+  LOG(INFO) << nNow << " samples best = " << best[n_dim_] << endl;
   ofstream fout("result.dat", ofstream::app);
   if (fout) {
     fout.setf(ios::scientific);
@@ -383,7 +383,7 @@ void Surro<Real>::opt() {
     ofstream fout("result.dat");
     if (fout) {
       fout << "VARIABLES=num,x1";
-      for (i = 1; i < nVar; i++)
+      for (i = 1; i < n_dim_; i++)
         fout << ",x" << i + 1;
       fout << ",y";
       for (i = 0; i < nCons; i++)
@@ -405,10 +405,10 @@ void Surro<Real>::opt() {
     }
     if (nNow >= nSample) break;
   }
-  cout << endl << "best x = " << endl;
-  for (i = 0; i < nVar; ++i) {
-    cout << "\t" << best[i] << endl;
+  LOG(INFO) << endl << "best x = " << endl;
+  for (i = 0; i < n_dim_; ++i) {
+    LOG(INFO) << "\t" << best[i] << endl;
   }
-  cout << "using " << (Real)(clock() - timer) / (Real)CLOCKS_PER_SEC << " secs"
+  LOG(INFO) << "using " << (Real)(clock() - timer) / (Real)CLOCKS_PER_SEC << " secs"
        << endl;
 }

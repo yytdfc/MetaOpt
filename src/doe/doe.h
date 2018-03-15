@@ -16,12 +16,12 @@ class Doe
   void addLHS(int num);
   void printSample(std::string str);
   void printAdd(std::string str);
-  Real** sample;
+  std::vector<std::vector <Real>> sample_;
 
  private:
   int    addNum;
-  int    ndim;
-  int    nSample;
+  int    n_dim_;
+  int    n_sample_;
   Real** addSample;
   bool   ifadd;
   bool   hasSample;
