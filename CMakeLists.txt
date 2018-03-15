@@ -12,9 +12,10 @@ add_definitions(-DHASH_VALUE -g)
 # find_package(Eigen3 REQUIRED)
 # include_directories(${EIGEN3_INCLUDE_DIR})
 
-include_directories(src)
+include_directories(include src)
 link_directories(.)
 
+aux_source_directory(src/doe        SRC)
 aux_source_directory(src/doe        SRC_DOE)
 aux_source_directory(src/model      SRC_MOD)
 aux_source_directory(src/optimizer  SRC_OPT)

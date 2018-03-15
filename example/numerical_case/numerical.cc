@@ -1,4 +1,5 @@
 #include "optimizer/surro.h"
+#include "cmdline.hpp"
 #include <ctime>
 #include <cmath>
 #include <iostream>
@@ -54,15 +55,15 @@ double xx(double *x){
 }
 
 int main(int argc, char *argv[]){
-	int prob;
-	cout.setf(ios::scientific);
-	Surro obj1;
-	if (argc < 2){
-		prob = obj1.readInput("KGopt2.in");
-	}
-	else{
-		prob = obj1.readInput(argv[1]);
-	}
+  cmdline::parser a;
+  a.add<string>("input", 'i', "input file", true, "KGopt2.in");
+  a.parse_check(argc, argv);
+
+  auto input = a.get<string>("input");
+  int prob;
+  cout.setf(ios::scientific);
+  Surro obj1;
+  prob = obj1.readInput(input);
 	switch (prob){
 	case 1:
 		obj1.setFx(prob_1_Rosenbrock);

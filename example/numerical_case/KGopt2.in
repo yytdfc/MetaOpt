@@ -1,0 +1,27 @@
+Parameters for Opt
+	nProb		isRestart		restartFrom
+	1			0				0
+	nV			nCons			nPoints		addMethod
+	2			0				100			1
+	up/low
+  0   0
+  1   1
+Parameters for DoE
+	nInitial	DoEMethod
+	20			1
+Parameters for Kriging model
+	corr		const_theta  	porder
+	2  			0				0
+	dcmp  		ParaOpt			EIcons
+	2  			1				0
+Parameters for GA
+	popsize		generations		pCrossover		pMutation
+	70			500				0.9				0.05
+
+Parameter Note:
+addMethod:
+	1	EI
+	2	MP
+	3	ME
+	4	PI
+	5	LCB
