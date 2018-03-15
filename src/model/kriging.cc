@@ -1,16 +1,18 @@
 #include "kriging.h"
-#include <math.h>
-#include <iostream>
+#include "common.h"
+
+#include <cmath>
 #include <fstream>
 #include <cstdio>
-#include <time.h>
-#include <stdlib.h>
-#include <stddef.h>
+#include <ctime>
+#include <cstdlib>
+#include <cstddef>
 #include <string>
 #define TINYa 1.0e-20
-
-double Kriging::predictorEI(double* x) {
-  double s, dy;
+template class Kriging<double>;
+template <typename Real>
+Real Kriging<Real>::predictorEI(Real* x) {
+  Real s, dy;
   setPredict(0);
   dy = EI - predictor(x);
   s = MSE(x);
@@ -29,14 +31,16 @@ double Kriging::predictorEI(double* x) {
   }
   return x[n_dim];
 }
-double Kriging::predictorMP(double* x) {
+template <typename Real>
+Real Kriging<Real>::predictorMP(Real* x) {
   for (int i = 0; i < ny; i++) {
     setPredict(i);
     x[n_dim + i] = predictor(x);
   }
   return x[n_dim];
 }
-double Kriging::predictorME(double* x) {
+template <typename Real>
+Real Kriging<Real>::predictorME(Real* x) {
   setPredict(0);
   x[n_dim] = -MSE(x);
   for (int i = 1; i < ny; i++) {
@@ -44,8 +48,9 @@ double Kriging::predictorME(double* x) {
   }
   return x[n_dim];
 }
-double Kriging::predictorPI(double* x) {
-  double s, dy;
+template <typename Real>
+Real Kriging<Real>::predictorPI(Real* x) {
+  Real s, dy;
   setPredict(0);
   dy = EI - predictor(x);
   s = MSE(x);
@@ -64,7 +69,8 @@ double Kriging::predictorPI(double* x) {
   }
   return x[n_dim];
 }
-double Kriging::predictorLCB(double* x) {
+template <typename Real>
+Real Kriging<Real>::predictorLCB(Real* x) {
   setPredict(0);
   x[n_dim] = predictor(x) - 4 * MSE(x);
   for (int i = 1; i < ny; i++) {
@@ -74,20 +80,21 @@ double Kriging::predictorLCB(double* x) {
   return x[n_dim];
 }
 
-void Kriging::initialize(int      ncorr,
-                         int      nconst_theta,
-                         int      nporder,
-                         int      nnorm,
-                         int      ndcmp,
-                         int      nParaOpt,
-                         int      nregular,
-                         int      ndim,
-                         int      npoints,
-                         int      nout_points,
-                         int      nny,
-                         double** xxx,
-                         double*  up,
-                         double*  low) {
+template <typename Real>
+void Kriging<Real>::initialize(int    ncorr,
+                               int    nconst_theta,
+                               int    nporder,
+                               int    nnorm,
+                               int    ndcmp,
+                               int    nParaOpt,
+                               int    nregular,
+                               int    ndim,
+                               int    npoints,
+                               int    nout_points,
+                               int    nny,
+                               Real** xxx,
+                               Real*  up,
+                               Real*  low) {
   int i, j, k;
   rho_flag = 0;
   cokrig = 0;
@@ -154,7 +161,8 @@ void Kriging::initialize(int      ncorr,
   }
 }
 
-void Kriging::allocate() {
+template <typename Real>
+void Kriging<Real>::allocate() {
   int i, j;
   /*----------------------------------------------------------------------------
   | set parameter for kriging model
@@ -245,38 +253,38 @@ void Kriging::allocate() {
 
   allpoints = points + np;
 
-  xx = (double**)malloc((points) * sizeof(double*));
+  xx = (Real**)malloc((points) * sizeof(Real*));
   for (i = 0; i < points; i++)
-    xx[i] = (double*)malloc((n_dim) * sizeof(double));
-  xbound = (double**)malloc((n_dim) * sizeof(double*));
+    xx[i] = (Real*)malloc((n_dim) * sizeof(Real));
+  xbound = (Real**)malloc((n_dim) * sizeof(Real*));
   for (i = 0; i < n_dim; i++)
-    xbound[i] = (double*)malloc((2) * sizeof(double));
+    xbound[i] = (Real*)malloc((2) * sizeof(Real));
 
   flag = (int*)malloc((allpoints) * sizeof(int));
 
-  nyy = (double**)malloc((ny) * sizeof(double*));
+  nyy = (Real**)malloc((ny) * sizeof(Real*));
   for (i = 0; i < ny; i++)
-    nyy[i] = (double*)malloc((allpoints) * sizeof(double));
+    nyy[i] = (Real*)malloc((allpoints) * sizeof(Real));
 
-  nyvi = (double**)malloc((ny) * sizeof(double*));
+  nyvi = (Real**)malloc((ny) * sizeof(Real*));
   for (i = 0; i < ny; i++)
-    nyvi[i] = (double*)malloc((allpoints) * sizeof(double));
-  nsigma_sq = (double*)malloc((ny) * sizeof(double));
+    nyvi[i] = (Real*)malloc((allpoints) * sizeof(Real));
+  nsigma_sq = (Real*)malloc((ny) * sizeof(Real));
   yvi = nyvi[0];
 
-  nv = (double***)malloc((ny) * sizeof(double**));
+  nv = (Real***)malloc((ny) * sizeof(Real**));
   for (i = 0; i < ny; i++) {
-    nv[i] = (double**)malloc((allpoints) * sizeof(double*));
+    nv[i] = (Real**)malloc((allpoints) * sizeof(Real*));
     for (j = 0; j < allpoints; j++)
-      nv[i][j] = (double*)malloc((allpoints) * sizeof(double));
+      nv[i][j] = (Real*)malloc((allpoints) * sizeof(Real));
   }
   v = nv[0];
 
-  rvi = (double*)malloc((allpoints) * sizeof(double));
+  rvi = (Real*)malloc((allpoints) * sizeof(Real));
 
-  ndiag = (double**)malloc((ny) * sizeof(double*));
+  ndiag = (Real**)malloc((ny) * sizeof(Real*));
   for (i = 0; i < ny; i++)
-    ndiag[i] = (double*)malloc((allpoints) * sizeof(double));
+    ndiag[i] = (Real*)malloc((allpoints) * sizeof(Real));
   diag = ndiag[0];
 
   nindx = (int**)malloc((ny) * sizeof(int*));
@@ -284,32 +292,33 @@ void Kriging::allocate() {
     nindx[i] = (int*)malloc((allpoints) * sizeof(int));
   indx = nindx[0];
 
-  ntheta = (double**)malloc((ny) * sizeof(double*));
+  ntheta = (Real**)malloc((ny) * sizeof(Real*));
   for (i = 0; i < ny; i++)
-    ntheta[i] = (double*)malloc((n_dim) * sizeof(double));
+    ntheta[i] = (Real*)malloc((n_dim) * sizeof(Real));
   theta = ntheta[0];
 
-  npk = (double**)malloc((ny) * sizeof(double));
+  npk = (Real**)malloc((ny) * sizeof(Real));
   for (i = 0; i < ny; i++)
-    npk[i] = (double*)malloc((n_dim) * sizeof(double));
+    npk[i] = (Real*)malloc((n_dim) * sizeof(Real));
   pk = npk[0];
 
-  nF = (double***)malloc((ny) * sizeof(double**));
+  nF = (Real***)malloc((ny) * sizeof(Real**));
   for (i = 0; i < ny; i++) {
-    nF[i] = (double**)malloc((allpoints) * sizeof(double*));
+    nF[i] = (Real**)malloc((allpoints) * sizeof(Real*));
     for (j = 0; j < allpoints; j++)
-      nF[i][j] = (double*)malloc((allpoints) * sizeof(double));
+      nF[i][j] = (Real*)malloc((allpoints) * sizeof(Real));
   }
 
   F = nF[0];
 
-  phi = (double*)malloc(np * sizeof(double));
-  phibar = (double*)malloc(np * sizeof(double));
+  phi = (Real*)malloc(np * sizeof(Real));
+  phibar = (Real*)malloc(np * sizeof(Real));
 
   isreadXinput = 0;
 }
 
-void Kriging::readInput(string infile) {
+template <typename Real>
+void Kriging<Real>::readInput(string infile) {
   int    i, j, k, restart;
   string line;
   cokrig = 0;
@@ -403,11 +412,12 @@ void Kriging::readInput(string infile) {
 /*---------------------------------------------------------------------------
 | Step 2 : Kriging/GEK model fitting based on sampling data
 ---------------------------------------------------------------------------*/
-void Kriging::training() {
+template <typename Real>
+void Kriging<Real>::training() {
   if (ParaOpt == 1) {
     fitting();
   } else if (ParaOpt == 2) {
-    double* x = (double*)malloc((n_dim + 2) * sizeof(double));
+    Real* x = (Real*)malloc((n_dim + 2) * sizeof(Real));
     mle_initialization(x);
     mle_optimization(x);
     free(x);
@@ -424,7 +434,8 @@ void Kriging::training() {
 /*----------------------------------------------------------------------------
 |  read parameters and sampled data from input file
 ----------------------------------------------------------------------------*/
-void Kriging::readXinput() {
+template <typename Real>
+void Kriging<Real>::readXinput() {
   int   i, j;
   FILE* fpin;
   if ((fpin = fopen("Xinput.txt", "r")) == NULL) {
@@ -433,9 +444,9 @@ void Kriging::readXinput() {
   }
   fscanf(fpin, "%d ", &(ninterp));
   printf("ninterp = %d points\n", ninterp);
-  Xinput = (double**)malloc((ninterp) * sizeof(double*));
+  Xinput = (Real**)malloc((ninterp) * sizeof(Real*));
   for (i = 0; i < ninterp; i++)
-    Xinput[i] = (double*)malloc((n_dim) * sizeof(double));
+    Xinput[i] = (Real*)malloc((n_dim) * sizeof(Real));
 
   for (i = 0; i < ninterp; i++) {
     for (j = 0; j < n_dim; j++) {
@@ -447,11 +458,12 @@ void Kriging::readXinput() {
   isreadXinput = 1;
 }
 
-void Kriging::predictionDB() {
+template <typename Real>
+void Kriging<Real>::predictionDB() {
   int i, j, k;
   readXinput();
-  double* xinterp;
-  xinterp = (double*)malloc((n_dim) * sizeof(double));
+  Real* xinterp;
+  xinterp = (Real*)malloc((n_dim) * sizeof(Real));
   FILE* fpout4;
   if ((fpout4 = fopen("Youtput.dat", "w")) == NULL) {
     printf("Failed to open file Youtput.dat \n");
@@ -479,7 +491,8 @@ void Kriging::predictionDB() {
   printf("\n");
 }
 
-void Kriging::prediction() {
+template <typename Real>
+void Kriging<Real>::prediction() {
   int i, j, k;
 
   /*----------------------------------------------------------------------------
@@ -491,14 +504,14 @@ void Kriging::prediction() {
     printf("Failed to open file Youtput.dat \n");
     exit(0);
   }
-  double **Youtput, **Yrmse, *xinterp;
-  Youtput = (double**)malloc((ninterp) * sizeof(double*));
+  Real **Youtput, **Yrmse, *xinterp;
+  Youtput = (Real**)malloc((ninterp) * sizeof(Real*));
   for (i = 0; i < ninterp; i++)
-    Youtput[i] = (double*)malloc((ny) * sizeof(double));
-  Yrmse = (double**)malloc((ninterp) * sizeof(double*));
+    Youtput[i] = (Real*)malloc((ny) * sizeof(Real));
+  Yrmse = (Real**)malloc((ninterp) * sizeof(Real*));
   for (i = 0; i < ninterp; i++)
-    Yrmse[i] = (double*)malloc((ny) * sizeof(double));
-  xinterp = (double*)malloc((n_dim) * sizeof(double));
+    Yrmse[i] = (Real*)malloc((ny) * sizeof(Real));
+  xinterp = (Real*)malloc((n_dim) * sizeof(Real));
   for (k = 0; k < ny; k++) {
     setPredict(k);
     for (i = 0; i < ninterp; i++) {
@@ -555,7 +568,8 @@ void Kriging::prediction() {
   free(xinterp);
 }
 
-void Kriging::outputRSM() {
+template <typename Real>
+void Kriging<Real>::outputRSM() {
   int i, j, k;
   //----------------write "output_rsm.dat"-------------------
 
@@ -596,9 +610,9 @@ void Kriging::outputRSM() {
   } else {
     ; /** to be added... **/
   }
-  double  xout, xout1, yout, ymse;
-  double* dx;
-  dx = (double*)malloc((n_dim) * sizeof(double));
+  Real  xout, xout1, yout, ymse;
+  Real* dx;
+  dx = (Real*)malloc((n_dim) * sizeof(Real));
   for (i = 0; i < n_dim; i++) {
     if (out_points == 1)
       dx[i] = 0.0;
@@ -606,8 +620,8 @@ void Kriging::outputRSM() {
       dx[i] = (xbound[i][1] - xbound[i][0]) / (out_points - 1.0);
   }
 
-  double* xstar;
-  xstar = (double*)malloc((n_dim) * sizeof(double));
+  Real* xstar;
+  xstar = (Real*)malloc((n_dim) * sizeof(Real));
   if (n_dim == 1) {
     for (i = 0; i < out_points; i++) {
       xout = xbound[0][0] + dx[0] * i;
@@ -669,7 +683,8 @@ void Kriging::outputRSM() {
   free(dx);
 }
 
-void Kriging::setPredict(int k) {
+template <typename Real>
+void Kriging<Real>::setPredict(int k) {
   yvi = nyvi[k];  // Loop for n dims of Y
   sigma_sq = nsigma_sq[k];
   if (const_theta && !isGK)
@@ -690,7 +705,8 @@ void Kriging::setPredict(int k) {
 * Date   : 29.06.2009
 *******************************************************************************/
 
-void Kriging::destructor() {
+template <typename Real>
+void Kriging<Real>::destructor() {
   int i, j;
   /*----------------------------------------------------------------------------
   | free memory for sampled data
@@ -759,7 +775,8 @@ void Kriging::destructor() {
 * Author : Zhong-Hua.Han
 * Date   : 29.06.2009
 *******************************************************************************/
-void Kriging::fitting() {
+template <typename Real>
+void Kriging<Real>::fitting() {
   int i, j, k;
   int IS;
 
@@ -930,14 +947,14 @@ void Kriging::fitting() {
       /*----------------------------------------------------------------
       | *x; design varialbe array for optimization
       ----------------------------------------------------------------*/
-      double *lbd, *ubd;
-      double *lbd0, *ubd0;
-      double* x;
-      lbd0 = (double*)malloc((h_dim) * sizeof(double));
-      ubd0 = (double*)malloc((h_dim) * sizeof(double));
-      lbd = (double*)malloc((h_dim) * sizeof(double));
-      ubd = (double*)malloc((h_dim) * sizeof(double));
-      x = (double*)malloc((h_dim) * sizeof(double));
+      Real *lbd, *ubd;
+      Real *lbd0, *ubd0;
+      Real* x;
+      lbd0 = (Real*)malloc((h_dim) * sizeof(Real));
+      ubd0 = (Real*)malloc((h_dim) * sizeof(Real));
+      lbd = (Real*)malloc((h_dim) * sizeof(Real));
+      ubd = (Real*)malloc((h_dim) * sizeof(Real));
+      x = (Real*)malloc((h_dim) * sizeof(Real));
 
       theta_init();
 
@@ -984,9 +1001,9 @@ void Kriging::fitting() {
       /*----------------------------------------------------------------
       | Hooke and Jeeves method for hyper parameters opt.
       ----------------------------------------------------------------*/
-      int    niters = 10 * n_dim;
-      double TRradius = 100.0;
-      double MLEU = 999.0;
+      int  niters = 10 * n_dim;
+      Real TRradius = 100.0;
+      Real MLEU = 999.0;
       // printf("\n");
       for (int ii = 0; ii < niters; ii++) {
         HookeAndJeeves(x, h_dim, lbd, ubd, IS);
@@ -997,7 +1014,7 @@ void Kriging::fitting() {
           lbd[k] = max(lbd0[k], theta[k] - TRradius);
           ubd[k] = min(ubd0[k], theta[k] + TRradius);
         }
-        double tol = fabs(MLEU - mle) / (fabs(mle) + 1e-16);
+        Real tol = fabs(MLEU - mle) / (fabs(mle) + 1e-16);
         if ((tol <= 1e-2) && (tol > 1.0e-6)) {
           TRradius *= 0.618 / 5.0;
         } else if (tol <= 1e-6)
@@ -1038,7 +1055,8 @@ void Kriging::fitting() {
 /*----------------------------------------------------------------------------
 | Output fitted data
 ----------------------------------------------------------------------------*/
-void Kriging::writeRestart(string fileRoute) {
+template <typename Real>
+void Kriging<Real>::writeRestart(string fileRoute) {
   int         i, j;
   const char* file = fileRoute.c_str();
   FILE*       fpout;
@@ -1049,31 +1067,31 @@ void Kriging::writeRestart(string fileRoute) {
   /*--------------------------------------------------------
   | Optimized hyper parameters
   --------------------------------------------------------*/
-  fwrite(nsigma_sq, sizeof(double), ny, fpout);
+  fwrite(nsigma_sq, sizeof(Real), ny, fpout);
   if (const_theta)
-    fwrite(ntheta[0], sizeof(double), n_dim, fpout);
+    fwrite(ntheta[0], sizeof(Real), n_dim, fpout);
   else
     for (i = 0; i < ny; i++)
-      fwrite(ntheta[i], sizeof(double), n_dim, fpout);
+      fwrite(ntheta[i], sizeof(Real), n_dim, fpout);
   if (corr == 0) {
     if (const_theta)
-      fwrite(npk[0], sizeof(double), n_dim, fpout);
+      fwrite(npk[0], sizeof(Real), n_dim, fpout);
     else
       for (i = 0; i < ny; i++)
-        fwrite(npk[i], sizeof(double), n_dim, fpout);
+        fwrite(npk[i], sizeof(Real), n_dim, fpout);
   }
 
   /*-----------------------------------------------------------------
   | regression vector phi
   -----------------------------------------------------------------*/
-  fwrite(phi, sizeof(double), np, fpout);
+  fwrite(phi, sizeof(Real), np, fpout);
 
   /*-----------------------------------------------------------------
   | Pre calculated yvi = y^T*v^(-1)
   -----------------------------------------------------------------*/
 
   for (i = 0; i < ny; i++)
-    fwrite(nyvi[i], sizeof(double), allpoints, fpout);
+    fwrite(nyvi[i], sizeof(Real), allpoints, fpout);
 
   /*-----------------------------------------------------------------
   |  Pre decompled correlation matrix v and ralated data index or diag
@@ -1081,11 +1099,11 @@ void Kriging::writeRestart(string fileRoute) {
 
   if (const_theta)
     for (i = 0; i < allpoints; i++)
-      fwrite(nv[0][i], sizeof(double), allpoints, fpout);
+      fwrite(nv[0][i], sizeof(Real), allpoints, fpout);
   else
     for (j = 0; j < ny; j++)
       for (i = 0; i < allpoints; i++)
-        fwrite(nv[j][i], sizeof(double), allpoints, fpout);
+        fwrite(nv[j][i], sizeof(Real), allpoints, fpout);
 
   if (dcmp == 0) {
     if (const_theta)
@@ -1097,10 +1115,10 @@ void Kriging::writeRestart(string fileRoute) {
 
   else {
     if (const_theta)
-      fwrite(ndiag[0], sizeof(double), allpoints, fpout);
+      fwrite(ndiag[0], sizeof(Real), allpoints, fpout);
     else
       for (i = 0; i < ny; i++)
-        fwrite(ndiag[i], sizeof(double), allpoints, fpout);
+        fwrite(ndiag[i], sizeof(Real), allpoints, fpout);
   }
   fclose(fpout);
 }
@@ -1109,7 +1127,8 @@ void Kriging::writeRestart(string fileRoute) {
 | Read the trained rsm model data
 ----------------------------------------------------------------------------*/
 
-void Kriging::readRestart(string fileRoute) {
+template <typename Real>
+void Kriging<Real>::readRestart(string fileRoute) {
   int         i, j;
   const char* file = fileRoute.c_str();
   FILE*       fpin;
@@ -1121,33 +1140,33 @@ void Kriging::readRestart(string fileRoute) {
   | Optimized hyper parameters
   --------------------------------------------------------*/
 
-  fread(nsigma_sq, sizeof(double), ny, fpin);  // Binary Read
+  fread(nsigma_sq, sizeof(Real), ny, fpin);  // Binary Read
 
   if (const_theta)
-    fread(ntheta[0], sizeof(double), n_dim, fpin);
+    fread(ntheta[0], sizeof(Real), n_dim, fpin);
   else
     for (i = 0; i < ny; i++)
-      fread(ntheta[i], sizeof(double), n_dim, fpin);
+      fread(ntheta[i], sizeof(Real), n_dim, fpin);
 
   if (corr == 0) {
     if (const_theta)
-      fread(npk[0], sizeof(double), n_dim, fpin);
+      fread(npk[0], sizeof(Real), n_dim, fpin);
     else
       for (i = 0; i < ny; i++)
-        fread(npk[i], sizeof(double), n_dim, fpin);
+        fread(npk[i], sizeof(Real), n_dim, fpin);
   }
 
   /*-----------------------------------------------------------------
   | regression vector phi
   -----------------------------------------------------------------*/
-  fread(phi, sizeof(double), np, fpin);
+  fread(phi, sizeof(Real), np, fpin);
 
   /*-----------------------------------------------------------------
   | Pre calculated yvi = y^T*v^(-1)
   -----------------------------------------------------------------*/
 
   for (i = 0; i < ny; i++)
-    fread(nyvi[i], sizeof(double), allpoints, fpin);
+    fread(nyvi[i], sizeof(Real), allpoints, fpin);
 
   /*-----------------------------------------------------------------
   |  Pre decompled correlation matrix v and ralated data index or diag
@@ -1155,11 +1174,11 @@ void Kriging::readRestart(string fileRoute) {
 
   if (const_theta)
     for (i = 0; i < allpoints; i++)
-      fread(nv[0][i], sizeof(double), allpoints, fpin);
+      fread(nv[0][i], sizeof(Real), allpoints, fpin);
   else
     for (j = 0; j < ny; j++)
       for (i = 0; i < allpoints; i++)
-        fread(nv[j][i], sizeof(double), allpoints, fpin);
+        fread(nv[j][i], sizeof(Real), allpoints, fpin);
 
   if (dcmp == 0) {
     if (const_theta)
@@ -1171,29 +1190,31 @@ void Kriging::readRestart(string fileRoute) {
 
   else {
     if (const_theta)
-      fread(ndiag[0], sizeof(double), allpoints, fpin);
+      fread(ndiag[0], sizeof(Real), allpoints, fpin);
     else
       for (i = 0; i < ny; i++)
-        fread(ndiag[i], sizeof(double), allpoints, fpin);
+        fread(ndiag[i], sizeof(Real), allpoints, fpin);
   }
   fclose(fpin);
 }
-double Kriging::predictor_unNorm(double* x) {
-  double* xx = new double[n_dim];
+template <typename Real>
+Real Kriging<Real>::predictor_unNorm(Real* x) {
+  Real* xx = new Real[n_dim];
   if (norm == 1) {
     for (int i = 0; i < n_dim; ++i) {
       xx[i] = (x[i] - xbound[i][0]) / (xbound[i][1] - xbound[i][0]);
     }
   }
-  double y = predictor(xx);
+  Real y = predictor(xx);
   delete[] xx;
   return y;
 }
 
-double Kriging::predictor(double* vec_interp) {
-  int     i = 0, k = 0;
-  double  lastval = 0.0;
-  double* vstar;
+template <typename Real>
+Real Kriging<Real>::predictor(Real* vec_interp) {
+  int   i = 0, k = 0;
+  Real  lastval = 0.0;
+  Real* vstar;
 
   /*----------------------------------------------------------------------------
   | Initialize regression vector phi
@@ -1214,7 +1235,7 @@ double Kriging::predictor(double* vec_interp) {
   /*----------------------------------------------------------------------------
   | allocate local memory for correlation vector r(x)
   ----------------------------------------------------------------------------*/
-  vstar = (double*)malloc((allpoints) * sizeof(double));
+  vstar = (Real*)malloc((allpoints) * sizeof(Real));
 
   /*----------------------------------------------------------------------------
   | compute correlation vector r(x)
@@ -1264,10 +1285,11 @@ double Kriging::predictor(double* vec_interp) {
 * Date   : 30.07.2009
 *******************************************************************************/
 
-double Kriging::grad_predictor(double* vec_interp, int k) {
-  int     i = 0, l = 0;
-  double  lastval = 0.0;
-  double* vstar;
+template <typename Real>
+Real Kriging<Real>::grad_predictor(Real* vec_interp, int k) {
+  int   i = 0, l = 0;
+  Real  lastval = 0.0;
+  Real* vstar;
 
   /*----------------------------------------------------------------------------
   | Initialize regression vector phibar
@@ -1293,7 +1315,7 @@ double Kriging::grad_predictor(double* vec_interp, int k) {
   /*----------------------------------------------------------------------------
   | allocate local memory for correlation vector r(x)
   ----------------------------------------------------------------------------*/
-  vstar = (double*)malloc((allpoints) * sizeof(double));
+  vstar = (Real*)malloc((allpoints) * sizeof(Real));
 
   /*----------------------------------------------------------------------------
   | compute correlation vector r(x)
@@ -1343,10 +1365,11 @@ double Kriging::grad_predictor(double* vec_interp, int k) {
 * Author : Zhong-Hua.Han
 * Date   : 29.06.2009
 *******************************************************************************/
-double Kriging::MSE(double* vec_interp) {
-  int     i, k;
-  double  lastval = 0.0;
-  double* vstar;
+template <typename Real>
+Real Kriging<Real>::MSE(Real* vec_interp) {
+  int   i, k;
+  Real  lastval = 0.0;
+  Real* vstar;
 
   /*----------------------------------------------------------------------------
   | Initialize regression vector phi
@@ -1369,7 +1392,7 @@ double Kriging::MSE(double* vec_interp) {
   /*----------------------------------------------------------------------------
   | Define arraies *vstar,
   ----------------------------------------------------------------------------*/
-  vstar = (double*)malloc((allpoints) * sizeof(double));
+  vstar = (Real*)malloc((allpoints) * sizeof(Real));
 
   /*----------------------------------------------------------------------------
   | Initialization of *vstar and rvi= r(x)^T*v^(-1)
@@ -1416,8 +1439,8 @@ double Kriging::MSE(double* vec_interp) {
   /*----------------------------------------------------------------------------
   | calculate value of correlation when distance equals to "0"
   ----------------------------------------------------------------------------*/
-  double variance_r0 = correlation_of_r(&vec_interp[0], &vec_interp[0]);
-  double mse = sqrt(sigma_sq * fabs(variance_r0 - lastval));
+  Real variance_r0 = correlation_of_r(&vec_interp[0], &vec_interp[0]);
+  Real mse = sqrt(sigma_sq * fabs(variance_r0 - lastval));
 
   /*----------------------------------------------------------------------------
   | free local memory
@@ -1434,10 +1457,11 @@ as result of kriging model fitting
 * Author : Zhong-Hua.Han
 * Date   : 29.06.2009
 *******************************************************************************/
-int Kriging::predictor_vector() {
-  int    i = 0;
-  int    j = 0;
-  double d = 0.0;
+template <typename Real>
+int Kriging<Real>::predictor_vector() {
+  int  i = 0;
+  int  j = 0;
+  Real d = 0.0;
 
   /*----------------------------------------------------------------------------
   | calculate correlation matrix
@@ -1503,7 +1527,8 @@ int Kriging::predictor_vector() {
 * Author : Zhong-Hua.Han
 * Date   : 29.06.2009
 *******************************************************************************/
-int Kriging::correlation_matrix() {
+template <typename Real>
+int Kriging<Real>::correlation_matrix() {
   int i, j;
   int k, l;
 
@@ -1574,15 +1599,16 @@ int Kriging::correlation_matrix() {
 * Author : By Zhonghua Han
 * Date   : 06.08.2008
 *******************************************************************************/
-double Kriging::process_variance() {
-  int     i;
-  double  lastval = 0.0;
-  double* vstar;
+template <typename Real>
+Real Kriging<Real>::process_variance() {
+  int   i;
+  Real  lastval = 0.0;
+  Real* vstar;
 
   /*----------------------------------------------------------------------------
   | Define arraies *vstar
   ----------------------------------------------------------------------------*/
-  vstar = (double*)malloc((allpoints) * sizeof(double));
+  vstar = (Real*)malloc((allpoints) * sizeof(Real));
 
   /*----------------------------------------------------------------------------
   | Initialization of *vstar
@@ -1642,11 +1668,12 @@ double Kriging::process_variance() {
 * Author : By Zhonghua Han
 * Date   : 06.08.2008
 *******************************************************************************/
-double Kriging::correlation_of_r(double* x1, double* x2) {
-  int    i;
-  double kesi, _theta;
-  double temp;
-  double r, _pk;
+template <typename Real>
+Real Kriging<Real>::correlation_of_r(Real* x1, Real* x2) {
+  int  i;
+  Real kesi, _theta;
+  Real temp;
+  Real r, _pk;
 
   temp = 1.0;
   if (corr < 10) {
@@ -1726,11 +1753,12 @@ i.e. first-oder patial derivative of correlation function
 * Date   : 29.06.2009
 *******************************************************************************/
 
-double Kriging::cross_correlation_of_r(double* x1, double* x2, int k) {
-  int    i;
-  double kesi, _theta;
-  double temp;
-  double r, xi, xj;
+template <typename Real>
+Real Kriging<Real>::cross_correlation_of_r(Real* x1, Real* x2, int k) {
+  int  i;
+  Real kesi, _theta;
+  Real temp;
+  Real r, xi, xj;
 
   temp = 1.0;
   for (i = 0; i < n_dim; i++) {
@@ -1809,12 +1837,13 @@ double Kriging::cross_correlation_of_r(double* x1, double* x2, int k) {
 * Author : By Zhonghua Han
 * Date   : 29.06.2009
 *******************************************************************************/
-double Kriging::cross_correlation_of_r2(double* x1, double* x2, int k) {
-  int    i;
-  double kesi, _theta;
-  double temp;
+template <typename Real>
+Real Kriging<Real>::cross_correlation_of_r2(Real* x1, Real* x2, int k) {
+  int  i;
+  Real kesi, _theta;
+  Real temp;
 
-  double r, xi, xj;
+  Real r, xi, xj;
 
   temp = 1.0;
   for (i = 0; i < n_dim; i++) {
@@ -1889,12 +1918,13 @@ double Kriging::cross_correlation_of_r2(double* x1, double* x2, int k) {
 * Date   : 29.06.2009
 *******************************************************************************/
 
-double Kriging::cross_correlation_of_r22(double* x1, double* x2, int k, int l) {
-  int    i;
-  double kesi, _theta;
-  double temp;
+template <typename Real>
+Real Kriging<Real>::cross_correlation_of_r22(Real* x1, Real* x2, int k, int l) {
+  int  i;
+  Real kesi, _theta;
+  Real temp;
 
-  double r, xi, xj;
+  Real r, xi, xj;
 
   temp = 1.0;
   for (i = 0; i < n_dim; i++) {
@@ -1995,7 +2025,8 @@ double Kriging::cross_correlation_of_r22(double* x1, double* x2, int k, int l) {
 * Date   : 29.06.2009
 *******************************************************************************/
 
-double Kriging::sign(double x) {
+template <typename Real>
+Real Kriging<Real>::sign(Real x) {
   if (x > 0.0)
     return (1.0);
   else if (x < 0.0)
@@ -2018,15 +2049,16 @@ double Kriging::sign(double x) {
 * @ R. Zimmermann, Dec. 2008
 ********************************************************************************/
 
-double Kriging::MLE(double* val) {
-  int    i;
-  double d;
+template <typename Real>
+Real Kriging<Real>::MLE(Real* val) {
+  int  i;
+  Real d;
 
   /*----------------------------------------------------------------------------
   | detcormatrix : determinate of correlation matrix
   ----------------------------------------------------------------------------*/
 
-  double detcormatrix = 0.0;
+  Real detcormatrix = 0.0;
 
   /*----------------------------------------------------------------------------
   | copy current parameter to kriging data structure
@@ -2056,7 +2088,7 @@ double Kriging::MLE(double* val) {
     ludcmp(v, allpoints, indx, &d);
     detcormatrix = 0.0;
     for (i = 0; i < allpoints; i++)
-      detcormatrix += log(fabs((double)(v[i][i])));
+      detcormatrix += log(fabs((Real)(v[i][i])));
   } else if (dcmp == 1) {
     psdf = choldcmp(v, allpoints, diag);
     detcormatrix = 0.0;
@@ -2096,7 +2128,7 @@ double Kriging::MLE(double* val) {
 
   sigma_sq = process_variance();
 
-  mle = (double)points * log(sigma_sq) + detcormatrix;
+  mle = (Real)points * log(sigma_sq) + detcormatrix;
 
   /*----------------------------------------------------------------------------
   | free local memory
@@ -2111,15 +2143,16 @@ double Kriging::MLE(double* val) {
 * Author : Zhong-Hua.Han
 * Date   : 29.07.2009, 12:29 a.m.,  Wed.,July 29th, 2009
 *******************************************************************************/
-double Kriging::bridgefunction_rho() {
-  int     i;
-  double  sum1 = 0, sum2 = 0;
-  double *y10, *y20, *y20_v_inv;
-  double  rho;
+template <typename Real>
+Real Kriging<Real>::bridgefunction_rho() {
+  int   i;
+  Real  sum1 = 0, sum2 = 0;
+  Real *y10, *y20, *y20_v_inv;
+  Real  rho;
 
-  y10 = (double*)malloc((allpoints) * sizeof(double));
-  y20 = (double*)malloc((allpoints) * sizeof(double));
-  y20_v_inv = (double*)malloc((allpoints) * sizeof(double));
+  y10 = (Real*)malloc((allpoints) * sizeof(Real));
+  y20 = (Real*)malloc((allpoints) * sizeof(Real));
+  y20_v_inv = (Real*)malloc((allpoints) * sizeof(Real));
 
   for (i = 0; i < allpoints; i++) {
     y10[i] = yhf[i];
@@ -2163,15 +2196,16 @@ double Kriging::bridgefunction_rho() {
 * Author : Zhong-Hua.Han
 * Date   : 04.08.2010
 *******************************************************************************/
-double Kriging::cokriging_gamma() {
-  int     i;
-  double  sum1 = 0, sum2 = 0;
-  double *y10, *y20, *y20_v_inv;
-  double  gamma;
+template <typename Real>
+Real Kriging<Real>::cokriging_gamma() {
+  int   i;
+  Real  sum1 = 0, sum2 = 0;
+  Real *y10, *y20, *y20_v_inv;
+  Real  gamma;
 
-  y10 = (double*)malloc((allpoints) * sizeof(double));
-  y20 = (double*)malloc((allpoints) * sizeof(double));
-  y20_v_inv = (double*)malloc((allpoints) * sizeof(double));
+  y10 = (Real*)malloc((allpoints) * sizeof(Real));
+  y20 = (Real*)malloc((allpoints) * sizeof(Real));
+  y20_v_inv = (Real*)malloc((allpoints) * sizeof(Real));
 
   for (i = 0; i < allpoints; i++) {
     if (flag[i] >= 0) {
@@ -2222,11 +2256,12 @@ double Kriging::cokriging_gamma() {
 * Author : R.Zimmermann
 * Date   : Dec. 2008
 *******************************************************************************/
-void Kriging::theta_init() {
-  int     i, j, k;
-  double* max_k_dist;
+template <typename Real>
+void Kriging<Real>::theta_init() {
+  int   i, j, k;
+  Real* max_k_dist;
 
-  max_k_dist = (double*)malloc(n_dim * sizeof(double));
+  max_k_dist = (Real*)malloc(n_dim * sizeof(Real));
 
   /*----------------------------------------------------------------------------
   | compute initial distance for comparison
@@ -2272,12 +2307,13 @@ void Kriging::theta_init() {
   }
   free(max_k_dist);
 }
-void Kriging::ludcmp(double** a, int n, int* indx, double* d) {
-  int     i, imax, j, k;
-  double  big, dum, sum, temp;
-  double* vv;
+template <typename Real>
+void Kriging<Real>::ludcmp(Real** a, int n, int* indx, Real* d) {
+  int   i, imax, j, k;
+  Real  big, dum, sum, temp;
+  Real* vv;
 
-  vv = (double*)malloc(n * sizeof(double));
+  vv = (Real*)malloc(n * sizeof(Real));
   *d = 1.0;
   for (i = 1; i <= n; i++) {
     big = 0.0;
@@ -2332,9 +2368,10 @@ back substitution
 * Author : By Zhonghua Han
 * Date   : 29.06.2009
 *******************************************************************************/
-void Kriging::lubksb(double** a, int n, int* indx, double b[]) {
-  int    i, ii = 0, ip, j;
-  double sum;
+template <typename Real>
+void Kriging<Real>::lubksb(Real** a, int n, int* indx, Real b[]) {
+  int  i, ii = 0, ip, j;
+  Real sum;
 
   for (i = 1; i <= n; i++) {
     ip = indx[i - 1];
@@ -2369,9 +2406,10 @@ void Kriging::lubksb(double** a, int n, int* indx, double b[]) {
 * Author : Zhonghua Han
 * Date   : 13.07.2009
 *******************************************************************************/
-int Kriging::choldcmp(double** a, int n, double diag[]) {
-  int    i, j, k;
-  double sum;
+template <typename Real>
+int Kriging<Real>::choldcmp(Real** a, int n, Real diag[]) {
+  int  i, j, k;
+  Real sum;
   for (i = 0; i < n; i++) {
     for (j = i; j < n; j++) {
       sum = a[i][j];
@@ -2407,13 +2445,10 @@ int Kriging::choldcmp(double** a, int n, double diag[]) {
 * Date   : 13.07.2009
 *******************************************************************************/
 
-void Kriging::cholbksb(double** a,
-                       int      n,
-                       double   diag[],
-                       double   b[],
-                       double   x[]) {
-  int    i, k;
-  double dum;
+template <typename Real>
+void Kriging<Real>::cholbksb(Real** a, int n, Real diag[], Real b[], Real x[]) {
+  int  i, k;
+  Real dum;
   /*----------------------------------------------------------------------------
   | Solve L*y=b,storing y in x
   ----------------------------------------------------------------------------*/
@@ -2450,9 +2485,10 @@ void Kriging::cholbksb(double** a,
 * Author : Zhonghua Han
 * Date   : 13.07.2009
 *******************************************************************************/
-void Kriging::ncholdcmp(double** a, int n, double diag[]) {
-  int    i, j, k;
-  double sum;
+template <typename Real>
+void Kriging<Real>::ncholdcmp(Real** a, int n, Real diag[]) {
+  int  i, j, k;
+  Real sum;
   for (i = 0; i < n; i++) {
     for (j = i; j < n; j++) {
       sum = a[i][j];
@@ -2487,13 +2523,14 @@ void Kriging::ncholdcmp(double** a, int n, double diag[]) {
 * Date   : 13.07.2009
 *******************************************************************************/
 
-void Kriging::ncholbksb(double** a,
-                        int      n,
-                        double   diag[],
-                        double   b[],
-                        double   x[]) {
-  int    i, k;
-  double dum;
+template <typename Real>
+void Kriging<Real>::ncholbksb(Real** a,
+                              int    n,
+                              Real   diag[],
+                              Real   b[],
+                              Real   x[]) {
+  int  i, k;
+  Real dum;
 
   /*----------------------------------------------------------------------------
   | Solve L*z=b,storing z in x
@@ -2523,3 +2560,1679 @@ void Kriging::ncholbksb(double** a,
   }
 
 } /** kriging_cholbksb() **/
+
+
+/*******************************************************************************
+* Func. : HOOKE AND JEEVES METHOD
+*         algorithm for multidimensional MINIMIZATION without using gradients
+* Notes : SEE: Kowalik, J,Osborne M.R."Methods for unconstrained
+*         optimization problems" in "modern analytic and computational
+*         methods in science and mathematics"
+*         R. Bellman, (ed.)
+*         Elsevier New York 1968
+*
+*         implementation here according to
+*         LOPHAVEN, S, NIELSEN, HB, SOENDERGAARD, J.
+*         DACE - A MATLAB Kriging Toolbox,
+*         Technical Report IMM-TR-2002-12
+*         Technical University Of Denmark
+*         http://www2.imm.dtu.dk/~hbn/dace/
+*         refered as LNS 2002
+*
+*         return value is adress of final parameter array x
+*
+* Author: R. Zimmermann, Nov. 2008
+*******************************************************************************/
+
+template <typename Real>
+int Kriging<Real>::HookeAndJeeves(Real* x,
+                                  int   dim,
+                                  Real* lbd,
+                                  Real* ubd,
+                                  int   IS)
+
+/*------------------------------------------------------------------------------
+| Input
+|   dim      : dimension of hyper parameter *x
+|   *fpointer: the pointer for ln-likeilihood funtion
+|   *lbd     : the lower bounds of design variables
+|   *ubd     : the upper bounds of design variables
+|   *paras   : kriging structure
+|   IS       : number of interration
+| Output
+|   x        : design variables
+------------------------------------------------------------------------------*/
+{
+    int i, j, k, l, J;
+    int d = dim;
+
+    /*----------------------------------------------------------------------------
+    | new_x : bool variable indicating if function value has to be calculated anew
+    | f_x : function value in x
+    | f_phi: function value in phi
+    | f_x_temp2: function value in x_temp
+    | *x_temp: emporary parameter for function value comparison
+    | *x_temp2: temporary parameter for function value comparison
+    | *phi : temporary parameter for function value comparison
+    | *delta : array storing the step size in each dimension
+    | *v : used for adjusting bad initial values
+    | *bad_init: corresponds to N in LNS 2008,
+    |            stores indices of bad starting values
+    ----------------------------------------------------------------------------*/
+    int  new_x = 1;
+    Real alpha;
+    Real swapvar;
+    Real f_x;
+    Real f_phi;
+    Real f_x_temp2;
+
+    Real* x_temp;
+    Real* x_temp2;
+    Real* phi;
+    Real* delta;
+    Real* v;
+    int*  bad_init;
+
+    x_temp = (Real*)malloc(d * sizeof(Real));
+    x_temp2 = (Real*)malloc(d * sizeof(Real));
+    phi = (Real*)malloc(d * sizeof(Real));
+    v = (Real*)malloc(d * sizeof(Real));
+
+    delta = (Real*)malloc(d * sizeof(Real));
+    bad_init = (int*)malloc(d * sizeof(int));
+
+    /*----------------------------------------------------------------------------
+    |  Corresponds to Alg. "start", LNS 2008, 6
+    ---------------------------------------------------------------------------*/
+
+    /*------------------------------------------------------------------
+    |  initialize arrays
+    | "-1" indicates an empty cell
+    -----------------------------------------------------------------*/
+    for (k = 0; k < d; k++) {
+        bad_init[k] = -1;
+        v[k] = 1.0;
+    }
+    for (k = 0; k < d; k++) {
+        if (lbd[k] == ubd[k]) {
+            delta[k] = 1;
+            /*----------------------------------------------------
+            | this is to keep x[k] fixed at the boundary
+            ---------------------------------------------------*/
+            x[k] = ubd[k];
+        } else {
+            /*----------------------------------------------------
+            | initial step size
+            | initial value outside boundary|
+            ---------------------------------------------------*/
+            delta[k] = pow(2.0, (Real)(k + 1) / (d + 2));
+            if ((x[k] < lbd[k]) || (x[k] > ubd[k])) {
+                /*----------------------------------------
+                | 0.125 = 1/8
+                ---------------------------------------*/
+                x[k] = pow(lbd[k] * ubd[k] * ubd[k] * ubd[k] * ubd[k] * ubd[k] *
+                           ubd[k] * ubd[k],
+                           0.125);
+                bad_init[k] = 1;
+            }
+        } /* if(lbd[k]==ubd[k]) */
+    }   /* for(k=0;k<d;k++) */
+
+    /*------------------------------------------------------------------
+    | treatment of bad initial values
+    -----------------------------------------------------------------*/
+    for (k = 0; k < d; k++) {
+        if (bad_init[k] == 1) {
+            printf("bad initial value k= %d \n", k);
+            for (i = 0; i < d; i++) {
+                x_temp[i] = x[i];
+                x_temp2[i] = x_temp[i];
+            }
+            /*----------------------------------------
+            |  0.0625 = 1/16
+            ---------------------------------------*/
+            v[k] = 0.0625;
+            alpha = log(lbd[0] / x[0]) / log(v[0]);
+            /*----------------------------------------
+            | find minimal alpha
+            ---------------------------------------*/
+            for (j = 0; j < d; j++) {
+                if (bad_init[j] == 1) {
+                    if (alpha < (log(lbd[j] / x[j]) / log(v[j]))) {
+                        alpha = log(lbd[j] / x[j]) / log(v[j]);
+                    }
+                }
+            }
+
+            for (j = 0; j < d; j++) {
+                if (bad_init[j] == 1) {
+                    v[j] = pow(v[j], alpha * 0.2);
+                }
+            }
+
+            for (l = 1; l <= 4; l++) {
+                for (j = 0; j < d; j++) {
+                    phi[j] = pow(v[j], (Real)l) * x_temp[j];
+                }
+
+                f_phi = MLE(phi);
+                f_x_temp2 = MLE(x_temp2);
+                f_x = MLE(x);
+                if (f_phi <= f_x_temp2) {
+                    for (j = 0; j < d; j++) {
+                        x_temp2[j] = phi[j];
+                    }
+
+                    if (f_phi < f_x) {
+                        for (j = 0; j < d; j++) {
+                            new_x = 1;
+                            x[j] = phi[j];
+                        }
+                        new_x = 1;
+                        J = j;
+                    } else
+                        /*------------------------------------
+                        | Stops the l-loop
+                        -----------------------------------*/
+                        l = 5;
+
+                } /* if(f_phi<= f_x_temp2) */
+
+            } /* for(l=1;l<=4;l++) */
+            /*------------------------------------------
+            | swaps step size values in array "delta"
+            ------------------------------------------*/
+            swapvar = delta[0];
+            delta[0] = delta[J];
+            delta[J] = swapvar;
+
+        } /* if(bad_init[k]==1) */
+
+    } /* for(k=0; k<d ;k++ */
+    /*----------------------------------------------------------------------------
+    | End Alg. "start"
+    ---------------------------------------------------------------------------*/
+
+    /*----------------------------------------------------------------------------
+    | Start interation loop
+    ---------------------------------------------------------------------------*/
+    for (i = 1; i <= IS; i++) {
+        /*----------------------------------------------------------------
+        | copy current x to x_temp
+        ---------------------------------------------------------------*/
+        for (k = 0; k < d; k++) {
+            x_temp[k] = x[k];
+        }
+
+        /*----------------------------------------------------------------
+        | Alg. "explore", LNS 2008, 6
+        | note if parameter is at boundary
+        ---------------------------------------------------------------*/
+
+        int atbd = 0;
+
+        for (j = 0; j < d; j++) {
+            if (lbd[j] < ubd[j]) {
+                /*--------------------------------------------------
+                | copy current x to phi
+                -------------------------------------------------*/
+                for (k = 0; k < d; k++)
+                    phi[k] = x[k];
+                if (x[j] == lbd[j]) {
+                    phi[j] = lbd[j] * sqrt(delta[j]);
+                    atbd = 1;
+                } else if (x[j] == ubd[j]) {
+                    phi[j] = ubd[j] / (sqrt(delta[j]));
+                    atbd = 1;
+                } else {
+                    /*--------------------------------------------------
+                    | phi[j]:=min( x[j]*delta[j], ubd[j])
+                    -------------------------------------------------*/
+                    if (x[j] * delta[j] < ubd[j]) {
+                        phi[j] = x[j] * delta[j];
+                    } else {
+                        phi[j] = ubd[j];
+                    }
+                    atbd = 0;
+                }
+            } /* if(lbd[j]<ubd[j]) */
+
+            f_phi = MLE(phi);
+            if (new_x) f_x = MLE(x);
+
+            /*----------------------------------------------------
+            | current phi is better solution than current x
+            ----------------------------------------------------*/
+            if (f_phi < f_x) {
+                for (k = 0; k < d; k++) {
+                    x[k] = phi[k];
+                }
+                new_x = 1;
+            } else {
+                if (atbd == 0) {
+                    /*------------------------------------------------
+                    | phi[j]:=max( x[j]/delta[j], lbd[j])
+                    ------------------------------------------------*/
+                    if (x[j] / delta[j] > lbd[j])
+                        phi[j] = x[j] / delta[j];
+                    else
+                        phi[j] = lbd[j];
+
+                    f_phi = MLE(phi);
+
+                    if (new_x) f_x = MLE(x);
+                    /*------------------------------------------------
+                    | current phi is better solution than current x
+                    ------------------------------------------------*/
+                    if (f_phi < f_x) {
+                        new_x = 1;
+                        for (k = 0; k < d; k++) {
+                            x[k] = phi[k];
+                        }
+                    } else
+                        new_x = 0;
+
+                } /* if(atbd==0) */
+
+            } /* if(f_phi< f_x) */
+
+        } /* for(j=0;j<d;j++) */
+        /*----------------------------------------------------------------
+        | end Alg. "explore"
+        ---------------------------------------------------------------*/
+
+        /*----------------------------------------------------------------
+        | Alg. "move" LNS 2008, 6
+        ---------------------------------------------------------------*/
+
+        int x_NOTEQUAL_x_temp = 0;
+        int notstop = 0;
+        /*----------------------------------------------------------------
+        | check if array x is equal to array x_temp
+        ---------------------------------------------------------------*/
+        for (k = 0; k < d; k++) {
+            if (x[k] != x_temp[k]) {
+                x_NOTEQUAL_x_temp += 1;
+                /*--------------------
+                | exit loop
+                -------------------*/
+                break;
+            }
+        }
+        /*----------------------------------------------------------------
+        | i.e. x = x_temp
+        ---------------------------------------------------------------*/
+        if (x_NOTEQUAL_x_temp == 0) {
+            for (k = 0; k < d; k++)
+                delta[k] = pow(delta[k], 0.2);
+        } else {
+            for (k = 0; k < d; k++) {
+                v[k] = x[k] / x_temp[k];
+            }
+            notstop = 1;
+            while (notstop) {
+                for (k = 0; k < d; k++)
+                    phi[k] = x[k] * v[k];
+
+                for (j = 0; j < d; j++) {
+                    if (phi[j] <= lbd[j]) {
+                        phi[j] = lbd[j];
+                        /*--------------------
+                        | stopping criterion
+                        -------------------*/
+                        notstop = 0;
+                    } else if (phi[j] >= ubd[j]) {
+                        phi[j] = ubd[j];
+                        notstop = 0;
+                    }
+                } /* for(j=0;j<d;j++) * /
+
+          /*------------------------------------------------------------
+          | theta might have changed the loop step before
+          | so new computation is necessary
+          | phi might have changed, so new computation is necessary
+          | current phi is better solution than current x
+          -----------------------------------------------------------*/
+                f_x = MLE(x);
+                f_phi = MLE(phi);
+                if (f_phi < f_x) {
+                    for (k = 0; k < d; k++) {
+                        x[k] = phi[k];
+                        v[k] = v[k] * v[k];
+                    }
+                } else
+                    notstop = 0;
+            }
+            for (k = 0; k < d; k++)
+                delta[k] = pow(delta[k], 0.25);
+        } /* if(x_NOTEQUAL_x_temp ==0) */
+
+        /*----------------------------------------------------------------
+        | end Alg. "move"
+        ---------------------------------------------------------------*/
+
+        /*----------------------------------------------------------------
+        | Rotate delta
+        ---------------------------------------------------------------*/
+
+        swapvar = delta[0];
+        for (k = 0; k < (d - 1); k++)
+            delta[k] = delta[k + 1];
+        delta[d - 1] = swapvar;
+
+    } /* for(i=1;i<=IS;i++ * /
+
+    /*----------------------------------------------------------------
+    | Compute function value after optimization process
+    ---------------------------------------------------------------*/
+    f_x = MLE(x);
+
+    /*----------------------------------------------------------------------------
+    | free local memory
+    ----------------------------------------------------------------------------*/
+
+    free(bad_init);
+    free(x_temp);
+    free(x_temp2);
+    free(phi);
+    free(v);
+    free(delta);
+
+    return (0); /*adress of array x is returned*/
+
+} /** HookeAndJeeves() **/
+
+/*******************************************************************************
+* Func. : Output the design space of theta for 1 and 2 dimentional problem
+* Author : Zhong-hua.Han
+* Date : 30.06.2009
+*******************************************************************************/
+
+/*******************************************************************************
+* Function: Determine starting value x=(theta,beta,sigma^2) for MLE
+* Note    : all input data (x-sites and y-values@x-sites) has to be transformed
+*           to [0,1], gradient-information accordingly, BEFORE function call!
+* Date    : 2010-01-25  $
+* Author  : Benjamin Rosenbaum $
+*******************************************************************************/
+template <typename Real>
+int Kriging<Real>::mle_initialization(Real* x) {
+    /*----------------------------------------------------------------------------
+    | check for wrong choice of correlation function in GEK
+    ----------------------------------------------------------------------------*/
+
+    int i;
+
+    if (corr == 2) {
+        for (i = 0; i < points; i++) {
+            if (flag[i] > 0) {
+                printf("ParaOpt=2 can't be used for corr=2 in GEK.\n");
+                printf("Use ParaOpt=1 or corr=3 instead!\n");
+                exit(1);
+            }
+        }
+    }
+
+    int j, k, l;
+
+    Real* dummygrad = (Real*)malloc((n_dim + 2) * sizeof(Real));
+    Real  mle;
+
+    /*----------------------------------------------------------------------------
+    | lbd/ubd = lower/upper boundary for initial theta-space
+    ----------------------------------------------------------------------------*/
+
+    Real* lbd = (Real*)malloc(n_dim * sizeof(Real));
+    Real* ubd = (Real*)malloc(n_dim * sizeof(Real));
+
+    switch (corr) {
+        case 1: {
+            for (i = 0; i < n_dim; i++) {
+                lbd[i] = 1.0;
+                ubd[i] = 100.0;
+            }
+            break;
+        }
+        case 2: {
+            for (i = 0; i < n_dim; i++) {
+                lbd[i] = .1;
+                ubd[i] = 10.0;
+            }
+            break;
+        }
+        case 3: {
+            for (i = 0; i < n_dim; i++) {
+                lbd[i] = .1;
+                ubd[i] = 10.0;
+            }
+            break;
+        }
+        default: {
+            printf("\n Currently there is no such correlation function !!!\n");
+            return (1);
+        }
+    } /*end switch( corr)*/
+
+    /*----------------------------------------------------------------------------
+    | initial value for hyperparameter-optimization
+    | evaluate mle over theta-grid and save best mle-value
+    ----------------------------------------------------------------------------*/
+
+    int   ctheta = 5;
+    Real* xtheta = (Real*)malloc((n_dim + 2) * sizeof(Real));
+
+    for (i = 0; i < n_dim; i++)
+        x[i] = lbd[i];
+
+    switch (n_dim) {
+        case 1: {
+            Real mle_min = 1.0e+12;
+            for (i = 0; i < ctheta; i++) {
+                xtheta[0] = lbd[0] + i * (ubd[0] - lbd[0]) / (ctheta - 1);
+                mle_beta_sigma(xtheta);
+                mle = mle_val_and_diff(xtheta, dummygrad);
+                if (mle < mle_min) {
+                    mle_min = mle;
+                    for (k = 0; k < n_dim + 2; k++)
+                        x[k] = xtheta[k];
+                }
+            }
+            break;
+        }
+        case 2: {
+            Real mle_min = 1.0e+12;
+            for (i = 0; i < ctheta; i++) {
+                for (j = 0; j < ctheta; j++) {
+                    xtheta[0] = lbd[0] + i * (ubd[0] - lbd[0]) / (ctheta - 1);
+                    xtheta[1] = lbd[1] + j * (ubd[1] - lbd[1]) / (ctheta - 1);
+                    mle_beta_sigma(xtheta);
+                    mle = mle_val_and_diff(xtheta, dummygrad);
+                    if (mle < mle_min) {
+                        mle_min = mle;
+                        for (k = 0; k < n_dim + 2; k++)
+                            x[k] = xtheta[k];
+                    }
+                }
+            }
+            break;
+        }
+        case 3: {
+            Real mle_min = 1.0e+12;
+            for (i = 0; i < ctheta; i++) {
+                for (j = 0; j < ctheta; j++) {
+                    for (l = 0; l < ctheta; l++) {
+                        xtheta[0] = lbd[0] + i * (ubd[0] - lbd[0]) / (ctheta - 1);
+                        xtheta[1] = lbd[1] + j * (ubd[1] - lbd[1]) / (ctheta - 1);
+                        xtheta[2] = lbd[2] + l * (ubd[2] - lbd[2]) / (ctheta - 1);
+                        mle_beta_sigma(xtheta);
+                        mle = mle_val_and_diff(xtheta, dummygrad);
+                        if (mle < mle_min) {
+                            mle_min = mle;
+                            for (k = 0; k < n_dim + 2; k++)
+                                x[k] = xtheta[k];
+                        }
+                    }
+                }
+            }
+            break;
+        }
+        default: {
+            printf("( n_dim)>3 still to be implemented in ");
+            printf("kriging_mle_initialisation\n");
+            printf("Or use LHC sampling over theta-space!\n");
+            return (1);
+        }
+    } /* end switch( n_dim)*/
+
+    /*----------------------------------------------------------------------------
+    | initial value for hyperparameter-optimization
+    | evaluate mle over Latin Hypercube sampling and save best mle-value
+    ----------------------------------------------------------------------------*/
+    /*
+    int nLHC=50;
+
+    Real **xthetaLHC = (Real**)malloc( n_dim*sizeof(Real*));
+    for(k=0;k< n_dim;k++)
+    xthetaLHC[k]=(Real*)malloc(nLHC*sizeof(Real));
+
+    for(k=0;k< n_dim;k++)
+    {
+    for(i=0;i<nLHC;i++)
+    xthetaLHC[k][i]=lbd[k]+i*(ubd[k]-lbd[k])/(nLHC-1);
+    permutation_of_vector(xthetaLHC[k],nLHC);
+    }
+
+    Real *xtheta     = (Real *)malloc(( n_dim+2) * sizeof(Real));
+    Real mle_min=1.0e+12;
+
+    for(i=0;i< n_dim;i++)
+    x[i]=lbd[i];
+
+    for(i=0;i<nLHC;i++)
+    {
+    for(k=0;k< n_dim;k++)
+    xtheta[k]=xthetaLHC[k][i];
+    kriging_mle_beta_sigma(paras, xtheta);
+    mle=kriging_mle_val_and_diff(paras,xtheta,dummygrad);
+    if( mle < mle_min)
+    {
+    mle_min=mle;
+    for(k=0;k< n_dim;k++)
+    x[k]=xtheta[k];
+    }
+    }
+
+    kriging_mle_beta_sigma(x);
+    */
+
+    /*----------------------------------------------------------------------------
+    | free local memory
+    ----------------------------------------------------------------------------*/
+    /*
+    for(k=0;k< n_dim;k++)
+    free(xthetaLHC[k]);
+    free(xthetaLHC);
+    */
+    free(dummygrad);
+    free(ubd);
+    free(lbd);
+    free(xtheta);
+
+    return (0);
+
+} /** kriging_mle_initalization **/
+
+/*******************************************************************************
+* Function: Optimization algorithm for MLE problem
+*           uses gradient-based Quasi-Newton-Method and Trust-Region-Ansatz
+* Note    : All input data (x-sites and y-values@x-sites) has to be transformed
+*           to [0,1], gradient-information accordingly, BEFORE function call!
+*           Beta and sigma^2 are NOT being implicitely computed, but are
+*           optimization variables and are determined by the optimization alg.
+* Date    : 2010-06-09  $
+* Author  : Benjamin Rosenbaum $
+*******************************************************************************/
+template <typename Real>
+int Kriging<Real>::mle_optimization(Real* x) {
+    /*----------------------------------------------------------------------------
+    | check for wrong choice of correlation function in GEK
+    ----------------------------------------------------------------------------*/
+
+    int i;
+
+    if (corr == 2) {
+        for (i = 0; i < points; i++) {
+            if (flag[i] > 0) {
+                printf("ParaOpt=2 can't be used for corr=2 in GEK.\n");
+                printf("Use ParaOpt=1 or corr=3 instead!\n");
+                exit(1);
+            }
+        }
+    }
+
+    /*----------------------------------------------------------------------------
+    | initialization for optimization algorithm
+    ----------------------------------------------------------------------------*/
+
+    int j, k;
+    int iteration;
+
+    Real mle;
+    Real mleneu;
+
+    Real* lbd = (Real*)malloc(n_dim * sizeof(Real));
+    Real* ubd = (Real*)malloc(n_dim * sizeof(Real));
+
+    Real* grad = (Real*)malloc((n_dim + 2) * sizeof(Real));
+    Real* gradneu = (Real*)malloc((n_dim + 2) * sizeof(Real));
+    Real* xneu = (Real*)malloc((n_dim + 2) * sizeof(Real));
+    Real* d = (Real*)malloc((n_dim + 2) * sizeof(Real));
+
+    Real t; /* stepsize */
+    Real c = 1.0e-8;
+    Real gradnorm, dTgrad, sTy;
+
+    Real** H = (Real**)malloc((n_dim + 2) * sizeof(Real*));
+    Real** Hinv = (Real**)malloc((n_dim + 2) * sizeof(Real*));
+    for (i = 0; i < (n_dim + 2); i++) {
+        H[i] = (Real*)calloc((n_dim + 2), sizeof(Real));
+        Hinv[i] = (Real*)calloc((n_dim + 2), sizeof(Real));
+    }
+
+    Real* xtheta = (Real*)malloc(n_dim * sizeof(Real));
+
+    int*  indx_lu = (int*)malloc((n_dim + 2) * sizeof(int));
+    Real  d_lu;
+    Real  ared, pred;
+    Real  dummy1, dummy2;
+    Real* pB = (Real*)malloc((n_dim + 2) * sizeof(Real));
+    Real* pU = (Real*)malloc((n_dim + 2) * sizeof(Real));
+    Real* p = (Real*)malloc((n_dim + 2) * sizeof(Real));
+    Real  normpU, normpB, normp;
+    Real  deltaTR;
+    Real  tauTR;
+    Real  rhoTR;
+    Real  aa, ab, bb;
+    int   TRboundary;
+
+    Real deltaTRneu;
+    Real deltaTR_ubnd = 1.0;
+    Real deltaTR_lbnd = 1.0e-14;
+    Real etaTR = 0.125;
+
+    deltaTR = 0.1;
+
+    Real* sBFGS = (Real*)malloc((n_dim + 2) * sizeof(Real));
+    Real* yBFGS = (Real*)malloc((n_dim + 2) * sizeof(Real));
+    Real* BsBFGS = (Real*)malloc((n_dim + 2) * sizeof(Real));
+
+    int lbnd_violate;
+
+    normp = 1.0;
+    normpB = 1.0;
+    normpU = 1.0;
+
+    int fall = 1;
+
+    FILE* OptimizationFile;
+    OptimizationFile = fopen("./OptimizationFile.dat", "w");
+    fprintf(OptimizationFile, "   i  ");
+    for (k = 0; k < n_dim; k++)
+        fprintf(OptimizationFile, "theta%d        ", k + 1);
+    fprintf(OptimizationFile, "beta          sigma^2       ");
+    fprintf(OptimizationFile, "funval        gradnorm\n");
+
+    /*----------------------------------------------------------------------------
+    | initialization for optimization algorithm
+    ----------------------------------------------------------------------------*/
+
+    iteration = 0;
+
+    /* initialize Hessian approx. as identity */
+    for (j = 0; j < (n_dim + 2); j++)
+        H[j][j] = 1.0;
+
+    mle = mle_val_and_diff(x, grad);
+    gradnorm = 0.0;
+    for (j = 0; j < (n_dim + 2); j++)
+        gradnorm += grad[j] * grad[j];
+    gradnorm = sqrt(gradnorm);
+
+    /*----------------------------------------------------------------------------
+    | start optimization loop
+    ----------------------------------------------------------------------------*/
+
+    while (gradnorm > 1.0e-3) {
+        iteration++;
+        mle = mle_val_and_diff(x, grad);
+        gradnorm = 0.0;
+        for (j = 0; j < (n_dim + 2); j++)
+            gradnorm += grad[j] * grad[j];
+        gradnorm = sqrt(gradnorm);
+
+        fprintf(OptimizationFile, "% 4d ", iteration);
+        for (k = 0; k < n_dim + 2; k++)
+            fprintf(OptimizationFile, "% 1.6le ", x[k]);
+        fprintf(OptimizationFile, "% 1.6le % 1.6le \n", mle, gradnorm);
+
+        deltaTRneu = deltaTR;
+
+        /*-------------------------------------------------------------------------
+        | solve quadratic subproblem:
+        |   min {f + g^T p + 0.5 p^T H p}
+        |   s.t. p^T p <= delta^2
+        | according to dogleg-method
+        -------------------------------------------------------------------------*/
+
+        /* compute LU-decomp of Hessian H in matrix Hinv */
+        for (j = 0; j < n_dim + 2; j++)
+            for (k = 0; k < n_dim + 2; k++)
+                Hinv[j][k] = H[j][k];
+        ludcmp(Hinv, n_dim + 2, indx_lu, &d_lu);
+
+        /* (a) perform full Quasi-Newton-step pB=-H^(-1)*g */
+        for (j = 0; j < n_dim + 2; j++)
+            pB[j] = -grad[j];
+        lubksb(Hinv, n_dim + 2, indx_lu, pB);
+
+        normpB = 0.0;
+        for (j = 0; j < n_dim + 2; j++)
+            normpB += pB[j] * pB[j];
+        normpB = sqrt(normpB);
+
+        /* (b) perform full Gradient-step pU=- (g^T g)/(g^T H g) * g  */
+        dummy1 = 0.0;
+        for (j = 0; j < n_dim + 2; j++)
+            dummy1 += grad[j] * grad[j];
+        dummy2 = 0.0;
+        for (j = 0; j < n_dim + 2; j++)
+            for (k = 0; k < n_dim + 2; k++)
+                dummy2 += grad[j] * H[j][k] * grad[k];
+        dummy1 /= dummy2;
+        for (j = 0; j < n_dim + 2; j++)
+            pU[j] = -(dummy1)*grad[j];
+
+        normpU = 0.0;
+        for (j = 0; j < n_dim + 2; j++)
+            normpU += pU[j] * pU[j];
+        normpU = sqrt(normpU);
+
+        /* dogleg-method: descent p as a combination of pB and pU */
+        if (normpB < deltaTR) /*case 1: pB in TR -> full Quasi-Newton step pB*/
+        {
+            for (j = 0; j < n_dim + 2; j++)
+                p[j] = pB[j];
+            normp = normpB;
+            TRboundary = 0;
+            fall = 1;
+        } else {
+            if (normpU >= deltaTR) /*case 2: pU out of TR -> Cauchy-point*/
+            {
+                for (j = 0; j < n_dim + 2; j++)
+                    p[j] = -(deltaTR / gradnorm) * grad[j];
+                normp = deltaTR;
+                TRboundary = 1;
+                fall = 2;
+            } else /*case3: dogleg-path -> go from pU to pB until TR is reached */
+            {
+                tauTR = 1.0;
+                normp = 0.0;
+                for (j = 0; j < n_dim + 2; j++) {
+                    p[j] = pU[j] + tauTR * (pB[j] - pU[j]);
+                    normp += p[j] * p[j];
+                }
+                normp = sqrt(normp);
+                while (normp > deltaTR) {
+                    tauTR = tauTR * 0.95;
+                    normp = 0.0;
+                    for (j = 0; j < n_dim + 2; j++) {
+                        p[j] = pU[j] + tauTR * (pB[j] - pU[j]);
+                        normp += p[j] * p[j];
+                    }
+                }
+                TRboundary = 1;
+                fall = 3;
+            }
+        } /*endif*/
+
+        /*-------------------------------------------------------------------------
+        | compute next iterate xneu, projection to admissable set if needed
+        -------------------------------------------------------------------------*/
+
+        for (j = 0; j < n_dim + 2; j++)
+            xneu[j] = x[j] + p[j];
+
+        lbnd_violate = 0;
+        for (k = 0; k < n_dim; k++)
+            if (xneu[k] < 1.0e-12) /* theta_k */
+                lbnd_violate = 1;
+        if (xneu[n_dim + 1] < 1.0e-12) /* sigma^2 */
+            lbnd_violate = 1;
+
+        while (lbnd_violate == 1) {
+            for (j = 0; j < n_dim + 2; j++) {
+                p[j] = 0.95 * p[j];
+                xneu[j] = x[j] + p[j];
+            }
+            lbnd_violate = 0;
+            for (k = 0; k < n_dim; k++)
+                if (xneu[k] < 1.0e-12) lbnd_violate = 1;
+            if (xneu[n_dim + 1] < 1.0e-12) lbnd_violate = 1;
+        }
+
+        /*-------------------------------------------------------------------------
+        | perfom TR-step,
+        | if actual_reduction/predicted_reduction=rhoTR is sufficient large
+        -------------------------------------------------------------------------*/
+
+        pred = 0.0;
+        for (j = 0; j < n_dim + 2; j++)
+            for (k = 0; k < n_dim + 2; k++)
+                pred -= 0.5 * p[j] * H[j][k] * p[k];
+        for (j = 0; j < n_dim + 2; j++)
+            pred -= grad[j] * p[j];
+
+        ared = mle - mle_val_and_diff(xneu, gradneu);
+
+        rhoTR = (Real)ared / (Real)pred;
+
+        if ((rhoTR < 0.25 || ared < 0.0) && normp > deltaTR_lbnd) {
+            deltaTRneu = 0.25 * normp;
+        } else {
+            if (rhoTR > 0.75 && TRboundary > 0) {
+                if (2.0 * deltaTR < deltaTR_ubnd)
+                    deltaTRneu = 2.0 * deltaTR;
+                else
+                    deltaTRneu = deltaTR_ubnd;
+            }
+        }
+        if (rhoTR > etaTR && ared >= 0.0) {
+            /*-----------------------------------------------------------------------
+            | update Hessian BFGS
+            -----------------------------------------------------------------------*/
+            if (normp > deltaTR_lbnd) {
+                for (j = 0; j < n_dim + 2; j++) {
+                    sBFGS[j] = xneu[j] - x[j];
+                    yBFGS[j] = gradneu[j] - grad[j];
+                }
+                dummy1 = 0.0;
+                for (j = 0; j < n_dim + 2; j++)
+                    for (k = 0; k < n_dim + 2; k++)
+                        dummy1 += sBFGS[j] * H[j][k] * sBFGS[k];
+                dummy2 = 0.0;
+                for (j = 0; j < n_dim + 2; j++)
+                    dummy2 += yBFGS[j] * sBFGS[j];
+                for (j = 0; j < n_dim + 2; j++) {
+                    BsBFGS[j] = 0.0;
+                    for (k = 0; k < n_dim + 2; k++) {
+                        BsBFGS[j] += H[j][k] * sBFGS[k];
+                    }
+                }
+                for (j = 0; j < n_dim + 2; j++)
+                    for (k = 0; k < n_dim + 2; k++)
+                        H[j][k] = H[j][k] - (BsBFGS[j] * BsBFGS[k]) / dummy1 +
+                                  (yBFGS[j] * yBFGS[k]) / dummy2;
+            }
+
+            /*-----------------------------------------------------------------------
+            | save new iterate xneu in old iterate x
+            -----------------------------------------------------------------------*/
+
+            for (j = 0; j < n_dim + 2; j++)
+                x[j] = xneu[j];
+        }
+
+        /* restart Hessian as Identity every 100 iterations */
+        if (iteration % 100 == 0)
+            for (j = 0; j < n_dim + 2; j++) {
+                for (k = 0; k < n_dim + 2; k++)
+                    H[j][k] = 0.0;
+                H[j][j] = 1.0;
+            }
+
+        deltaTR = deltaTRneu;
+
+        if (deltaTR < deltaTR_lbnd) {
+            /*deltaTR=deltaTR_lbnd;*/
+            printf("\n optimization algorithm ended: no further decrease possible\n");
+            break;
+        }
+
+        if (iteration > 1.0e3) {
+            printf("\n optimization algorithm ended: max. iterations\n");
+            break;
+        }
+    }
+
+    if (gradnorm <= 1.0e-3)
+        printf("\n optimization algorithm ended: norm(gradient)<1.0e-3\n");
+
+    printf("\n optimal solution: theta =");
+    for (k = 0; k < n_dim; k++)
+        printf("% 1.6le ", x[k]);
+    printf("\n                    beta =% 1.6le", x[n_dim]);
+    printf("\n                 sigma^2 =% 1.6le\n\n", x[n_dim + 1]);
+
+    fclose(OptimizationFile);
+
+    for (k = 0; k < n_dim; k++)
+        xtheta[k] = x[k];
+
+    /*----------------------------------------------------------------------------
+    |  Initialize additional components of paras (F,phi,phibar,yvi,rvi)
+    ----------------------------------------------------------------------------*/
+
+    for (i = 0; i < allpoints; i++)
+        yvi[i] = 0.0;
+
+    for (i = 0; i < allpoints; i++)
+        rvi[i] = 0.0;
+
+    /*----------------------------------------------------------------------------
+    | Initialize regression  matrix F
+    ----------------------------------------------------------------------------*/
+    if (init_F == 0) {
+        /*----------------------------------------------------------------
+        | constant regression
+        ---------------------------------------------------------------*/
+        for (i = 0; i < points; i++) {
+            if (flag[i] == 0)
+                F[i][0] = 1.0;
+            else
+                F[i][0] = 0.0;
+
+        } /* for(i=0;i< points; i++) */
+
+        /*----------------------------------------------------------------
+        | linear regression
+        ----------------------------------------------------------------*/
+        if (porder == 1) {
+            for (j = 1; j <= n_dim; j++) {
+                for (i = 0; i < points; i++) {
+                    if (flag[i] == 0) {
+                        F[i][j] = xx[i][j - 1];
+                    } else if (j == flag[i])
+                        F[i][j] = 1.0;
+                    else
+                        F[i][j] = 0.0;
+
+                } /* for(i=0;i< points; i++) */
+
+            } /* for(j=1;j<= n_dim;j++)*/
+
+        } /* if( porder==1) */
+
+        for (i = points; i < allpoints; i++)
+            for (j = 0; j < np; j++)
+                F[i][j] = 0.0;
+        init_F = 1;
+
+    } /* if( init_F) */
+
+    /*----------------------------------------------------------------------------
+    | Initialize regression vector phi
+    ----------------------------------------------------------------------------*/
+    if (init_phi == 0 && porder == 0) {
+        phi[0] = 1.0;
+
+        for (i = 1; i < np; i++) {
+            phi[i] = 0.0;
+        }
+        init_phi = 1;
+    }
+
+    /*----------------------------------------------------------------------------
+    | Initialize regression vector phibar
+    ----------------------------------------------------------------------------*/
+    if (init_phibar == 0 && porder == 0) {
+        phibar[0] = 0.0;
+
+        for (i = 1; i < np; i++) {
+            phibar[i] = 0.0;
+        }
+        init_phibar = 1;
+    }
+
+    mle = MLE(xtheta); /* writes add. necessary infos to paras */
+
+    /*----------------------------------------------------------------------------
+    | free local memory
+    ----------------------------------------------------------------------------*/
+    free(lbd);
+    free(ubd);
+    free(grad);
+    free(gradneu);
+    free(xneu);
+    free(d);
+    for (i = 0; i < n_dim + 2; i++) {
+        free(H[i]);
+        free(Hinv[i]);
+    }
+    free(xtheta);
+    free(indx_lu);
+    free(pB);
+    free(pU);
+    free(p);
+    free(sBFGS);
+    free(yBFGS);
+    free(BsBFGS);
+    return (0);
+
+} /** kriging_mle_optimization**/
+
+/*******************************************************************************
+* Function: Evaluation and Derivation of MLE-function
+*           w.r.t. val = [theta,beta,sigma^2]
+*           mle-value is returned value
+*           Gradient is stored in dmle
+* Note:     Extension from former function
+kriging_MLE(krig_paras *paras, Real *val) from kriging_MAIN.c.
+Uses arbitrary beta and sigma^2.
+Computation of correlations according to
+Koehler/Owen "Computer Experiments" in "Handbook of Statistics",p279
+* Date:     2010-01-11
+* Author:   Benjamin Rosenbaum
+********************************************************************************/
+template <typename Real>
+Real Kriging<Real>::mle_val_and_diff(Real* val, Real* dmle) {
+    int  i, j, k, l, n, ns;
+    int* indx;
+    Real d;
+
+    n = points;
+
+    Real* dummyvector = (Real*)malloc(n * sizeof(Real));
+    Real* z = (Real*)malloc(n * sizeof(Real));
+    Real* vz = (Real*)malloc(n * sizeof(Real));
+
+    Real* residual = (Real*)malloc(n * sizeof(Real));
+
+    /*----------------------------------------------------------------------------
+    | logdetv : log of determinate of correlation matrix
+    ----------------------------------------------------------------------------*/
+
+    Real logdetv = 0.0;
+
+    /*----------------------------------------------------------------------------
+    | **v : A copy of(points x points) block of   v
+    ----------------------------------------------------------------------------*/
+    Real**  v = (Real**)malloc(n * sizeof(Real*));
+    Real**  v_save = (Real**)malloc(n * sizeof(Real*));
+    Real*** dv = (Real***)malloc(n_dim * sizeof(Real**));
+
+    indx = (int*)malloc(n * sizeof(int));
+
+    for (i = 0; i < n; i++)
+        v[i] = (Real*)malloc(n * sizeof(Real));
+
+    for (i = 0; i < n; i++)
+        v_save[i] = (Real*)malloc(n * sizeof(Real));
+
+    for (k = 0; k < n_dim; k++) {
+        dv[k] = (Real**)malloc(n * sizeof(Real*));
+        for (i = 0; i < n; i++)
+            dv[k][i] = (Real*)malloc(n * sizeof(Real));
+    }
+
+    /*----------------------------------------------------------------------------
+    | copy current parameter to kriging data structure
+    | and reconsturct correlation matrix
+    ----------------------------------------------------------------------------*/
+    for (i = 0; i < n_dim; i++)
+        theta[i] = val[i];
+    correlation_matrix();
+
+    for (i = 0; i < n; i++)
+        for (j = 0; j < n; j++)
+            v_save[i][j] = v[i][j];
+
+    if (corr == 1) /* matrix regularization in case of gauss-corr */
+        for (i = 0; i < n; i++)
+            v[i][i] += ((10.0 + n) * 1.0e-8);
+
+    /*----------------------------------------------------------------------------
+    | copy beta and sigma_sq
+    ----------------------------------------------------------------------------*/
+
+    Real beta = val[n_dim];
+    Real sigma_sq = val[n_dim + 1];
+
+    /*----------------------------------------------------------------------------
+    | copy  y to y
+    ----------------------------------------------------------------------------*/
+
+    Real* y = (Real*)malloc(n * sizeof(Real));
+
+    for (i = 0; i < n; i++)
+        y[i] = yy[i];
+
+    /*----------------------------------------------------------------------------
+    | copy corrmatrix to **v
+    | dvk = derivation of v resp. to theta_k
+    ----------------------------------------------------------------------------*/
+
+    Real* dist = (Real*)malloc(n_dim * sizeof(Real));
+    Real* R = (Real*)malloc(n_dim * sizeof(Real));
+    int*  ai = (int*)malloc(n_dim * sizeof(int));
+    int*  aj = (int*)malloc(n_dim * sizeof(int));
+
+    Real* xi = (Real*)malloc(n_dim * sizeof(Real));
+
+    switch (corr) {
+        case 1: /* gauss-correlation */
+            for (i = 0; i < n; i++) {
+                for (j = 0; j < n; j++) {
+                    v[i][j] = v[i][j];
+
+                    for (k = 0; k < n_dim; k++) {
+                        dist[k] = xx[j][k] - xx[i][k];
+                        R[k] = exp(-theta[k] * dist[k] * dist[k]);
+                    }
+
+                    for (k = 0; k < n_dim; k++) {
+                        ai[k] = 0;
+                        aj[k] = 0;
+                        if (flag[i] == (k + 1)) ai[k] = 1;
+                        if (flag[j] == (k + 1)) aj[k] = 1;
+                    }
+
+                    /* initialize dv[k][][]: -1 if yi is derivation, else 1 */
+                    if (flag[i] == 0)
+                        for (k = 0; k < n_dim; k++)
+                            dv[k][i][j] = 1.0;
+                    else
+                        for (k = 0; k < n_dim; k++)
+                            dv[k][i][j] = -1.0;
+
+                    /* compute derivations dv[k][][] */
+                    for (k = 0; k < n_dim; k++) /* product of (dim) 1d-correlations */
+                    {
+                        for (l = 0; l < n_dim; l++) /* derivation resp. to (dim) thetas */
+                        {
+                            switch (ai[k] + aj[k]) {
+                                case 0: /* neither yi nor yj is derivation */
+                                {
+                                    if (k == l)
+                                        dv[l][i][j] *= R[k] * (-1.0) * dist[k] * dist[k];
+                                    else
+                                        dv[l][i][j] *= R[k];
+                                    break;
+                                }
+                                case 1: /* either yi or yj is derivation */
+                                {
+                                    if (k == l)
+                                        dv[l][i][j] *=
+                                                R[k] * (2.0 * theta[k] * dist[k] * dist[k] * dist[k] -
+                                                        2.0 * dist[k]);
+                                    else
+                                        dv[l][i][j] *= R[k] * (-2.0 * theta[k] * dist[k]);
+                                    break;
+                                }
+                                case 2: /* both yi and yj are derivations */
+                                {
+                                    if (k == l)
+                                        dv[l][i][j] *=
+                                                R[k] * (-4.0 * theta[k] * theta[k] * dist[k] * dist[k] *
+                                                        dist[k] * dist[k] +
+                                                        10.0 * theta[k] * dist[k] * dist[k] - 2.0);
+                                    else
+                                        dv[l][i][j] *= R[k] * (-2.0 * theta[k]) *
+                                                       (1.0 - 2.0 * theta[k] * dist[k] * dist[k]);
+                                    break;
+                                }
+                            } /* end switch */
+                        }
+                    }
+                }
+            }
+            break;
+
+        case 2: /* spline-correlation */
+            for (i = 0; i < n; i++) {
+                for (j = 0; j < n; j++) {
+                    v[i][j] = v[i][j];
+
+                    for (k = 0; k < n_dim; k++) {
+                        dist[k] = fabs(xx[j][k] - xx[i][k]);
+                        xi[k] = dist[k] * theta[k];
+                    }
+
+                    for (k = 0; k < n_dim; k++) {
+                        ai[k] = 0;
+                        aj[k] = 0;
+                        if (flag[i] == (k + 1)) ai[k] = 1;
+                        if (flag[j] == (k + 1)) aj[k] = 1;
+                    }
+                    /* initialize dv[k][][]: -1 if yi is derivation, else 1 */
+                    if (flag[i] == 0)
+                        for (k = 0; k < n_dim; k++)
+                            dv[k][i][j] = 1.0;
+                    else
+                        for (k = 0; k < n_dim; k++)
+                            dv[k][i][j] = -1.0;
+
+                    /* compute derivations dv[k][][] */
+                    for (k = 0; k < n_dim; k++) /* product of (dim) 1d-correlations */
+                    {
+                        for (l = 0; l < n_dim; l++) /* derivation resp. to (#dim) thetas */
+                        {
+                            switch (ai[k] + aj[k]) {
+                                case 0: /* neither yi nor yj is derivation */
+                                {
+                                    if (xi[k] >= 0.0 && xi[k] <= 0.2) {
+                                        if (k == l)
+                                            dv[l][i][j] *= (-30.0 + 90.0 * xi[k]) * xi[k] * dist[k];
+                                        else
+                                            dv[l][i][j] *=
+                                                    1.0 + (-15.0 + 30.0 * xi[k]) * xi[k] * xi[k];
+                                    } else if (xi[k] > 0.2 && xi[k] < 1.0) {
+                                        if (k == l)
+                                            dv[l][i][j] *=
+                                                    -3.75 * (1.0 - xi[k]) * (1.0 - xi[k]) * dist[k];
+                                        else
+                                            dv[l][i][j] *=
+                                                    1.25 * (1.0 - xi[k]) * (1.0 - xi[k]) * (1.0 - xi[k]);
+                                    } else {
+                                        if (k == l)
+                                            dv[l][i][j] *= 0.0;
+                                        else
+                                            dv[l][i][j] *= 0.0;
+                                    }
+                                    break;
+                                }
+                                case 1: /* either yi or yj is derivation */
+                                {
+                                    if (xi[k] >= 0.0 && xi[k] <= 0.2) {
+                                        if (k == l)
+                                            dv[l][i][j] *= (-60.0 + 270.0 * xi[k]) * xi[k] *
+                                                           sign(xx[j][k] - xx[i][k]);
+                                        else
+                                            dv[l][i][j] *= (-30.0 + 90.0 * xi[k]) * xi[k] * theta[k] *
+                                                           sign(xx[j][k] - xx[i][k]);
+                                    } else if (xi[k] > 0.2 && xi[k] < 1.0) {
+                                        if (k == l)
+                                            dv[l][i][j] *= (1.0 - xi[k]) *
+                                                           (-3.75 * (1.0 - xi[k]) + 7.5 * xi[k]) *
+                                                           sign(xx[j][k] - xx[i][k]);
+                                        else
+                                            dv[l][i][j] *= -3.75 * (1.0 - xi[k]) * (1.0 - xi[k]) *
+                                                           theta[k] * sign(xx[j][k] - xx[i][k]);
+                                    } else {
+                                        if (k == l)
+                                            dv[l][i][j] *= 0.0;
+                                        else
+                                            dv[l][i][j] *= 0.0;
+                                    }
+                                    break;
+                                }
+                                case 2: /* both yi and yj are derivations */
+                                {
+                                    if (xi[k] >= 0.0 && xi[k] <= 0.2) {
+                                        if (k == l)
+                                            dv[l][i][j] *= (-60.0 + 540.0 * xi[k]) * theta[k];
+                                        else
+                                            dv[l][i][j] *=
+                                                    (-30.0 + 180.0 * xi[k]) * theta[k] * theta[k];
+                                    } else if (xi[k] > 0.2 && xi[k] < 1.0) {
+                                        if (k == l)
+                                            dv[l][i][j] *= (15.0 - 22.5 * xi[k]) * theta[k];
+                                        else
+                                            dv[l][i][j] *= 7.5 * (1.0 - xi[k]) * theta[k] * theta[k];
+                                    } else {
+                                        if (k == l)
+                                            dv[l][i][j] *= 0.0;
+                                        else
+                                            dv[l][i][j] *= 0.0;
+                                    }
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            break;
+
+        case 3: /* spline-correlation */
+            for (i = 0; i < n; i++) {
+                for (j = 0; j < n; j++) {
+                    v[i][j] = v[i][j];
+
+                    for (k = 0; k < n_dim; k++) {
+                        dist[k] = fabs(xx[j][k] - xx[i][k]);
+                        xi[k] = dist[k] * theta[k];
+                    }
+
+                    for (k = 0; k < n_dim; k++) {
+                        ai[k] = 0;
+                        aj[k] = 0;
+                        if (flag[i] == (k + 1)) ai[k] = 1;
+                        if (flag[j] == (k + 1)) aj[k] = 1;
+                    }
+                    /* initialize dv[k][][]: -1 if yi is derivation, else 1 */
+                    if (flag[i] == 0)
+                        for (k = 0; k < n_dim; k++)
+                            dv[k][i][j] = 1.0;
+                    else
+                        for (k = 0; k < n_dim; k++)
+                            dv[k][i][j] = -1.0;
+
+                    /* compute derivations dv[k][][] */
+                    for (k = 0; k < n_dim; k++) /* product of (dim) 1d-correlations */
+                    {
+                        for (l = 0; l < n_dim; l++) /* derivation resp. to (#dim) thetas */
+                        {
+                            switch (ai[k] + aj[k]) {
+                                case 0: /* neither yi nor yj is derivation */
+                                {
+                                    if (xi[k] >= 0.0 && xi[k] <= 0.4) {
+                                        if (k == l)
+                                            dv[l][i][j] *=
+                                                    (-30.0 + (105.0 + (-97.5) * xi[k]) * xi[k]) * xi[k] *
+                                                    dist[k];
+                                        else
+                                            dv[l][i][j] *=
+                                                    1.0 +
+                                                    (-15.0 + (35.0 + (-24.375) * xi[k]) * xi[k]) * xi[k] *
+                                                    xi[k];
+                                    } else if (xi[k] > 0.4 && xi[k] < 1.0) {
+                                        if (k == l)
+                                            dv[l][i][j] *=
+                                                    ((-20.0 / 3.0) +
+                                                     (20.0 + (-20.0 + (20.0 / 3.0) * xi[k]) * xi[k]) *
+                                                     xi[k]) *
+                                                    dist[k];
+                                        else
+                                            dv[l][i][j] *=
+                                                    (5.0 / 3.0) +
+                                                    ((-20.0 / 3.0) +
+                                                     (10.0 +
+                                                      ((-20.0 / 3.0) + (5.0 / 3.0) * xi[k]) * xi[k]) *
+                                                     xi[k]) *
+                                                    xi[k];
+                                    } else {
+                                        if (k == l)
+                                            dv[l][i][j] *= 0.0;
+                                        else
+                                            dv[l][i][j] *= 0.0;
+                                    }
+                                    break;
+                                }
+                                case 1: /* either yi or yj is derivation */
+                                {
+                                    if (xi[k] >= 0.0 && xi[k] <= 0.4) {
+                                        if (k == l)
+                                            dv[l][i][j] *=
+                                                    (-60.0 + (315.0 + (-390.0) * xi[k]) * xi[k]) * xi[k] *
+                                                    sign(xx[j][k] - xx[i][k]);
+                                        else
+                                            dv[l][i][j] *=
+                                                    (-30.0 + (105.0 + (-97.5) * xi[k]) * xi[k]) * xi[k] *
+                                                    theta[k] * sign(xx[j][k] - xx[i][k]);
+                                    } else if (xi[k] > 0.4 && xi[k] < 1.0) {
+                                        if (k == l)
+                                            dv[l][i][j] *=
+                                                    ((-20.0 / 3.0) +
+                                                     (40.0 + (-60.0 + (80.0 / 3.0) * xi[k]) * xi[k]) *
+                                                     xi[k]) *
+                                                    sign(xx[j][k] - xx[i][k]);
+                                        else
+                                            dv[l][i][j] *=
+                                                    ((-20.0 / 3.0) +
+                                                     (20.0 + (-20.0 + (20.0 / 3.0) * xi[k]) * xi[k]) *
+                                                     xi[k]) *
+                                                    theta[k] * sign(xx[j][k] - xx[i][k]);
+                                    } else {
+                                        if (k == l)
+                                            dv[l][i][j] *= 0.0;
+                                        else
+                                            dv[l][i][j] *= 0.0;
+                                    }
+                                    break;
+                                }
+                                case 2: /* both yi and yj are derivations */
+                                {
+                                    if (xi[k] >= 0.0 && xi[k] <= 0.4) {
+                                        if (k == l)
+                                            dv[l][i][j] *=
+                                                    (-60.0 + (630.0 + (-1170.0) * xi[k]) * xi[k]) *
+                                                    theta[k];
+                                        else
+                                            dv[l][i][j] *=
+                                                    (-30.0 + (210.0 + (-292.5) * xi[k]) * xi[k]) *
+                                                    theta[k] * theta[k];
+                                    } else if (xi[k] > 0.4 && xi[k] < 1.0) {
+                                        if (k == l)
+                                            dv[l][i][j] *=
+                                                    (40.0 + (-120.0 + (80.0) * xi[k]) * xi[k]) * theta[k];
+                                        else
+                                            dv[l][i][j] *= (20.0 + (-40.0 + (20.0) * xi[k]) * xi[k]) *
+                                                           theta[k] * theta[k];
+                                    } else {
+                                        if (k == l)
+                                            dv[l][i][j] *= 0.0;
+                                        else
+                                            dv[l][i][j] *= 0.0;
+                                    }
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            break;
+        default:
+            printf("\n Currently there is no such correlation funciton !!!\n");
+    } /* end switch */
+
+    /*----------------------------------------------------------------------------
+    | decomposition of v and computation of its determinate
+    | LU decomp. could be relpaced by Cholesky decomp.
+    | After call v is LU decomp of itself, diagonal of L is not stores
+    | Compute log of determinant by adding the log values of the diagonal of R
+    ----------------------------------------------------------------------------*/
+    ludcmp(v, n, indx, &d);
+
+    /*----------------------------------------------------------------------------
+    | detcormatrix = log(det(v))
+    | log(det(v))' = 1/det(v) * det(v)'
+    |              = 1/det(v) * tr(v'*v^(-1)) * det(v)
+    |              = trace(v'*v^(-1))
+    ----------------------------------------------------------------------------*/
+
+    logdetv = 0.0;
+    for (i = 0; i < n; i++)
+        logdetv += log(fabs((Real)(v[i][i])));
+
+    Real* dlogdetv = (Real*)malloc(n_dim * sizeof(Real));
+
+    for (k = 0; k < n_dim; k++) {
+        for (i = 0; i < n; i++) {
+            for (j = 0; j < n; j++)
+                dummyvector[j] = dv[k][j][i];
+            lubksb(v, n, indx, dummyvector);
+            dlogdetv[k] += dummyvector[i];
+        }
+    }
+
+    /*----------------------------------------------------------------------------
+    | compute z=y-f*beta and vz=v^(-1)*z=v^(-1)*(y-f*beta)
+    ----------------------------------------------------------------------------*/
+
+    for (i = 0; i < n; i++) {
+        if (flag[i] == 0)
+            z[i] = y[i] - 1.0 * beta;
+        else
+            z[i] = y[i];
+        vz[i] = z[i];
+    }
+    lubksb(v, n, indx, vz);
+
+    /*----------------------------------------------------------------------------
+    | compute MLE-value
+    ----------------------------------------------------------------------------*/
+
+    Real mle = 0.0;
+    for (i = 0; i < n; i++)
+        mle += z[i] * vz[i];
+    mle /= (Real)sigma_sq;
+    mle += n * log(sigma_sq);
+    mle += logdetv;
+
+    /*----------------------------------------------------------------------------
+    | derivation resp. to theta ==> dmle[k]
+    ----------------------------------------------------------------------------*/
+
+    for (k = 0; k < n_dim; k++) {
+        dmle[k] = 0.0;
+        for (i = 0; i < n; i++)
+            for (j = 0; j < n; j++)
+                dmle[k] -= vz[i] * dv[k][i][j] * vz[j];
+        dmle[k] /= (Real)sigma_sq;
+        dmle[k] += dlogdetv[k];
+    }
+
+    /*----------------------------------------------------------------------------
+    | derivation resp. to beta ==> dmle[n_dim]
+    ----------------------------------------------------------------------------*/
+
+    dmle[n_dim] = 0.0;
+    for (i = 0; i < n; i++) {
+        if (flag[i] == 0) dmle[n_dim] -= vz[i];
+    }
+    dmle[n_dim] *= (2.0 / (Real)sigma_sq);
+
+    /*----------------------------------------------------------------------------
+    | derivation resp. to sigma ==> dmle[n_dim+1]
+    ----------------------------------------------------------------------------*/
+
+    dmle[n_dim + 1] = 0.0;
+    for (i = 0; i < n; i++)
+        dmle[n_dim + 1] -= z[i] * vz[i];
+    dmle[n_dim + 1] /= (Real)(sigma_sq * sigma_sq);
+    dmle[n_dim + 1] += (n / (Real)sigma_sq);
+
+    /*----------------------------------------------------------------------------
+    | free local memory
+    ----------------------------------------------------------------------------*/
+
+    for (i = 0; i < n; i++) {
+        free(v[i]);
+        free(v_save[i]);
+    }
+    free(v);
+    free(v_save);
+
+    for (k = 0; k < n_dim; k++) {
+        for (i = 0; i < n; i++) {
+            free(dv[k][i]);
+        }
+        free(dv[k]);
+    }
+    free(dv);
+
+    free(R);
+    free(dist);
+
+    free(ai);
+    free(aj);
+
+    free(indx);
+    free(dummyvector);
+    free(z);
+    free(vz);
+    free(y);
+
+    free(dlogdetv);
+
+    free(residual);
+
+    free(xi);
+
+    return (mle);
+
+} /** kriging_mle_val_and_diff() **/
+
+/*******************************************************************************
+* Function: Compute beta(theta) and sigma^2(beta,theta)
+* Note    : Is NOT used in the optimation-routine,
+*           only for initial value and checking.
+* Date    : 2010-01-11  $
+* Author  : Benjamin Rosenbaum $
+*******************************************************************************/
+template <typename Real>
+int Kriging<Real>::mle_beta_sigma(Real* val) {
+    int  i, j;
+    int* indx;
+    Real d;
+
+    int n = points;
+
+    Real* rz = (Real*)malloc(n * sizeof(Real));
+    Real  dummy1, dummy2;
+
+    /*----------------------------------------------------------------------------
+    | **v : A copy of(points x points) block of   v
+    ----------------------------------------------------------------------------*/
+    Real** v;
+
+    indx = (int*)malloc(n * sizeof(int));
+
+    v = (Real**)malloc(n * sizeof(Real*));
+    for (i = 0; i < n; i++)
+        v[i] = (Real*)malloc(n * sizeof(Real));
+
+    /*----------------------------------------------------------------------------
+    | copy current parameter to kriging data structure
+    | and reconsturct correlation matrix
+    ----------------------------------------------------------------------------*/
+    for (i = 0; i < n_dim; i++)
+        theta[i] = val[i];
+
+    correlation_matrix();
+
+    if (corr == 1)
+        for (i = 0; i < n; i++)
+            v[i][i] += ((10.0 + n) * 1.0e-8);
+
+    /*----------------------------------------------------------------------------
+    | copy  y to y
+    ----------------------------------------------------------------------------*/
+    Real* y = (Real*)malloc(n * sizeof(Real));
+
+    for (i = 0; i < n; i++)
+        y[i] = yy[i];
+
+    /*----------------------------------------------------------------------------
+    | copy corrmatrix to **v
+    ----------------------------------------------------------------------------*/
+    for (i = 0; i < n; i++) {
+        for (j = 0; j < n; j++)
+            v[i][j] = v[i][j];
+    }
+    /*----------------------------------------------------------------------------
+    | decomposition of v and computation of its determinate
+    | After call v is LU decomp of itself, diagonal of L is not stores
+    ----------------------------------------------------------------------------*/
+    ludcmp(v, n, indx, &d);
+
+    /*----------------------------------------------------------------------------
+    | compute rf=R^(-1)*f, ry=R^(-1)*y
+    ----------------------------------------------------------------------------*/
+    Real* rf = (Real*)malloc(n * sizeof(Real));
+    Real* ry = (Real*)malloc(n * sizeof(Real));
+
+    for (i = 0; i < n; i++) {
+        if (flag[i] == 0)
+            rf[i] = 1.0;
+        else
+            rf[i] = 0.0;
+        ry[i] = y[i];
+    }
+    lubksb(v, n, indx, rf);
+    lubksb(v, n, indx, ry);
+
+    /*----------------------------------------------------------------------------
+    | compute beta=val[n_dim]
+    ----------------------------------------------------------------------------*/
+    dummy1 = 0.0;
+    for (i = 0; i < n; i++)
+        if (flag[i] == 0) dummy1 += 1.0 * rf[i];
+    dummy2 = 0.0;
+    for (i = 0; i < n; i++)
+        if (flag[i] == 0) dummy2 += 1.0 * ry[i];
+    val[n_dim] = dummy2 / dummy1;
+
+    /*----------------------------------------------------------------------------
+    | compute sigma^2=val[n_dim+1]
+    ----------------------------------------------------------------------------*/
+    for (i = 0; i < n; i++)
+        rz[i] = ry[i] - val[2] * rf[i];
+
+    val[n_dim + 1] = 0.0;
+    for (i = 0; i < n; i++) {
+        if (flag[i] == 0)
+            val[n_dim + 1] += (y[i] - val[n_dim]) * rz[i];
+        else
+            val[n_dim + 1] += (y[i]) * rz[i];
+    }
+
+    val[n_dim + 1] = val[n_dim + 1] / ((Real)(n));
+
+    /*----------------------------------------------------------------------------
+    | free local memory
+    ----------------------------------------------------------------------------*/
+
+    for (i = 0; i < n; i++)
+        free(v[i]);
+    free(v);
+    free(rf);
+    free(ry);
+    free(rz);
+    free(y);
+    free(indx);
+
+    return (0);
+
+} /** kriging_mle_beta_sigma **/

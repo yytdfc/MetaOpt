@@ -1,13 +1,23 @@
 #include "surro.h"
+#include "common.h"
 #include <fstream>
 #include <sstream>
+
 using namespace std;
-void Surro::setFx(double (*f)(double*)) {
+
+template class Surro<double>;
+
+template <typename Real>
+void Surro<Real>::setFx(Real f(Real* x)) {
   fx = f;
   cout << "Opt Function setted." << endl;
 }
-void Surro::setGKrigFx(double (*f)(double*)) { krig.setFx(f); }
-int Surro::readInput(string infile) {
+template <typename Real>
+void Surro<Real>::setGKrigFx(Real f(Real* x)) {
+  krig.setFx(f);
+}
+template <typename Real>
+int Surro<Real>::readInput(string infile) {
   ifstream fin(infile);
   string   line;
   if (!fin) {
@@ -58,8 +68,8 @@ int Surro::readInput(string infile) {
   krig_regular = 1;
   krig_out_points = 2;
   krig.EIcons = krig_EIcons;
-  double* GAup = new double[nVar];
-  double* GAlow = new double[nVar];
+  Real* GAup = new Real[nVar];
+  Real* GAlow = new Real[nVar];
   for (i = 0; i < nVar; ++i) {
     GAup[i] = 1;
     GAlow[i] = 0;
@@ -71,7 +81,8 @@ int Surro::readInput(string infile) {
   return nProb;
 }
 
-void Surro::dealAdd() {
+template <typename Real>
+void Surro<Real>::dealAdd() {
   if (addN > 10000) {
     addMethod[0] = addN / 10000;
     addN = addN % 10000;
@@ -112,7 +123,8 @@ void Surro::dealAdd() {
   }
 }
 
-void Surro::backupResult() {
+template <typename Real>
+void Surro<Real>::backupResult() {
   stringstream ss;
   string       filename = "result.dat";
   string       cmd;
@@ -142,7 +154,8 @@ void Surro::backupResult() {
   fin.close();
 }
 
-void Surro::dealRestart() {
+template <typename Real>
+void Surro<Real>::dealRestart() {
   int      i, j;
   ifstream fin(restartFrom);
   if (fin.is_open()) {
@@ -195,35 +208,37 @@ void Surro::dealRestart() {
   fout.close();
 }
 
-void Surro::allocate() {
+template <typename Real>
+void Surro<Real>::allocate() {
   int i;
   addMethod = new int[5];
   vecLengh = nVar + nCons + 1;
-  sample = new double*[nSample];
-  sample[0] = new double[nSample * vecLengh];
+  sample = new Real*[nSample];
+  sample[0] = new Real[nSample * vecLengh];
   for (i = 1; i < nSample; ++i) {
     sample[i] = sample[i - 1] + vecLengh;
   }
-  best = new double[vecLengh];
-  convergence = new double[nSample];
+  best = new Real[vecLengh];
+  convergence = new Real[nSample];
   // convergence = { 0 };
   if (nCons > 0) {
-    cons = new double*[nSample];
+    cons = new Real*[nSample];
     for (i = 0; i < nSample; ++i) {
       cons[i] = sample[i] + nVar + 1;
     }
   }
-  upper = new double[nVar];
-  lower = new double[nVar];
+  upper = new Real[nVar];
+  lower = new Real[nVar];
   isInit = true;
 }
-void Surro::initialize(int     nv,
-                       int     nS,
-                       int     init,
-                       int     nCon,
-                       double* up,
-                       double* low,
-                       double (*f)(double*)) {
+template <typename Real>
+void Surro<Real>::initialize(int   nv,
+                             int   nS,
+                             int   init,
+                             int   nCon,
+                             Real* up,
+                             Real* low,
+                             std::function<Real(Real* x)> f) {
   int i;
   nVar = nv;
   nInit = init;
@@ -234,8 +249,8 @@ void Surro::initialize(int     nv,
     upper[i] = up[i];
     lower[i] = low[i];
   }
-  double* GAup = new double[nVar];
-  double* GAlow = new double[nVar];
+  Real* GAup = new Real[nVar];
+  Real* GAlow = new Real[nVar];
   for (i = 0; i < nVar; ++i) {
     GAup[i] = 1;
     GAlow[i] = 0;
@@ -245,7 +260,8 @@ void Surro::initialize(int     nv,
   delete[] GAlow;
 }
 
-Surro::~Surro() {
+template <typename Real>
+Surro<Real>::~Surro() {
   if (isInit) {
     delete[] addMethod;
     delete[] sample[0];
@@ -259,7 +275,8 @@ Surro::~Surro() {
     delete[] lower;
   }
 }
-void Surro::getBest(const int& k) {
+template <typename Real>
+void Surro<Real>::getBest(const int& k) {
   bool flag = true;
   int  i;
   if (sample[k][nVar] < best[nVar]) {
@@ -275,11 +292,12 @@ void Surro::getBest(const int& k) {
   }
   convergence[k] = best[nVar];
 }
-void Surro::initSample() {
+template <typename Real>
+void Surro<Real>::initSample() {
   int i, j;
   best[nVar] = 1e9;
-  Sample initSamp(nVar, nInit);
-  initSamp.genLHS();
+  Doe<Real> initSamp(nVar, nInit);
+  initSamp.gen();
   cout << "LHS samples generated." << endl;
 
   for (i = 0; i < nInit; ++i) {
@@ -307,7 +325,8 @@ void Surro::initSample() {
   cout << "Initial samples calculated." << endl;
 }
 
-void Surro::add(const int nadd) {
+template <typename Real>
+void Surro<Real>::add(const int nadd) {
   int i;
   krig.initialize(krig_corr, krig_const_theta, krig_porder, krig_norm,
                   krig_dcmp, krig_ParaOpt, krig_regular, nVar, nNow,
@@ -315,19 +334,19 @@ void Surro::add(const int nadd) {
   krig.GKtraining();
   if (nadd == 1) {
     krig.EI = best[nVar];
-    ga.setFx(bind(&GKrig::GKpredictorEI, &krig, placeholders::_1));
+    ga.setFx(bind(&GKrig<Real>::GKpredictorEI, &krig, placeholders::_1));
     cout << "adding EI." << endl;
   } else if (nadd == 2) {
-    ga.setFx(bind(&GKrig::GKpredictorMP, &krig, placeholders::_1));
+    ga.setFx(bind(&GKrig<Real>::GKpredictorMP, &krig, placeholders::_1));
     cout << "adding MP." << endl;
   } else if (nadd == 3) {
-    ga.setFx(bind(&GKrig::predictorME, &krig, placeholders::_1));
+    ga.setFx(bind(&GKrig<Real>::predictorME, &krig, placeholders::_1));
     cout << "adding ME." << endl;
   } else if (nadd == 4) {
-    ga.setFx(bind(&GKrig::predictorPI, &krig, placeholders::_1));
+    ga.setFx(bind(&GKrig<Real>::predictorPI, &krig, placeholders::_1));
     cout << "adding PI." << endl;
   } else if (nadd == 5) {
-    ga.setFx(bind(&GKrig::predictorLCB, &krig, placeholders::_1));
+    ga.setFx(bind(&GKrig<Real>::predictorLCB, &krig, placeholders::_1));
     cout << "adding LCB." << endl;
   }
   ga.evolve();
@@ -354,7 +373,8 @@ void Surro::add(const int nadd) {
   ++nNow;
 }
 
-void Surro::opt() {
+template <typename Real>
+void Surro<Real>::opt() {
   timer = clock();
   backupResult();
   int i, j;
@@ -389,6 +409,6 @@ void Surro::opt() {
   for (i = 0; i < nVar; ++i) {
     cout << "\t" << best[i] << endl;
   }
-  cout << "using " << (double)(clock() - timer) / (double)CLOCKS_PER_SEC
-       << " secs" << endl;
+  cout << "using " << (Real)(clock() - timer) / (Real)CLOCKS_PER_SEC << " secs"
+       << endl;
 }

@@ -1,20 +1,34 @@
 #include "powell.h"
-#include <iostream>
+#include "common.h"
 #include <cmath>
-#include <random>
 #include <ctime>
+
 using namespace std;
-Powell::Powell() { gen.seed(clock()); }
 
-Powell::Powell(int _nv) : nv(_nv) {}
+template class Powell <double>;
 
-Powell::Powell(int _nv, FUNC f) : nv(_nv), func(f) {}
+template <typename Real>
+Powell<Real>::Powell() {
 
-Powell::~Powell() {}
+}
 
-void Powell::SetFx(FUNC f) { func = f; }
+template <typename Real>
+Powell<Real>::Powell(int _nv) : nv(_nv) {}
 
-void Powell::InitDirec(double** direc) {
+template <typename Real>
+Powell<Real>::Powell(int _nv, std::function<Real(Real* x)> f)
+    : nv(_nv), func(f) {}
+
+template <typename Real>
+Powell<Real>::~Powell() {}
+
+template <typename Real>
+void Powell<Real>::SetFx(std::function<Real(Real* x)> f) {
+  func = f;
+}
+
+template <typename Real>
+void Powell<Real>::InitDirec(Real** direc) {
   for (unsigned int i = 0; i != nv; ++i) {
     for (unsigned int j = 0; j < nv; j++) {
       direc[i][j] = 0;
@@ -22,7 +36,8 @@ void Powell::InitDirec(double** direc) {
     direc[i][i] = 1.0;
   }
 }
-void Powell::InitReverseDirec(double** direc) {
+template <typename Real>
+void Powell<Real>::InitReverseDirec(Real** direc) {
   for (unsigned int i = 0; i != nv; ++i) {
     for (unsigned int j = 0; j < nv; j++) {
       direc[i][j] = 0;
@@ -30,31 +45,34 @@ void Powell::InitReverseDirec(double** direc) {
     direc[i][i] = -1.0;
   }
 }
-void Powell::InitRandomDirec(double** direc) {
+template <typename Real>
+void Powell<Real>::InitRandomDirec(Real** direc) {
   for (unsigned int i = 0; i != nv; ++i) {
     for (unsigned int j = 0; j < nv; j++) {
-      direc[i][j] = randomDouble();
+      direc[i][j] = Random::get<Real>(0, 1);
     }
   }
 }
 
-double Powell::f1dim2(double alpha, double* x, double* p, double* temp) {
+template <typename Real>
+Real Powell<Real>::f1dim2(Real alpha, Real* x, Real* p, Real* temp) {
   for (int j = 0; j < nv; j++) {
     temp[j] = x[j] + alpha * p[j];
   }
   return func(temp);
 }
 
-double Powell::Brent(double  xa,
-                     double  xb,
-                     double  xc,
-                     double  tol,
-                     double& xmin,
-                     FUNC1D  func1d) {
-  int          done, maxiter = 100;
-  const double mintol = 1.0e-11, cgold = 0.381966;
-  double       rat, fu, r, q, p, xmid, tol1, tol2, a, b;
-  double       u, etemp, dum, v, w, x, deltax, fx, fv, fw;
+template <typename Real>
+Real Powell<Real>::Brent(Real  xa,
+                         Real  xb,
+                         Real  xc,
+                         Real  tol,
+                         Real& xmin,
+                         std::function<Real(Real x)> func1d) {
+  int        done, maxiter = 100;
+  const Real mintol = 1.0e-11, cgold = 0.381966;
+  Real       rat, fu, r, q, p, xmid, tol1, tol2, a, b;
+  Real       u, etemp, dum, v, w, x, deltax, fx, fv, fw;
   x = w = v = xb;
   fw = fv = fx = func1d(x);
   if (xa < xc) {
@@ -144,14 +162,15 @@ double Powell::Brent(double  xa,
   return fx;
 }
 
-void Powell::LineSearch(double* x, double* direc) {
-  int     j;
-  double  tol = 1e-4;
-  double  fa, f, fb, xb, xa = 0.0;
-  double  xmin, xx = 1.0;
-  double* tempx = new double[nv + 1];
-  FUNC1D  func1d =
-      bind<double>(&Powell::f1dim2, this, placeholders::_1, x, direc, tempx);
+template <typename Real>
+void Powell<Real>::LineSearch(Real* x, Real* direc) {
+  int   j;
+  Real  tol = 1e-4;
+  Real  fa, f, fb, xb, xa = 0.0;
+  Real  xmin, xx = 1.0;
+  Real* tempx = new Real[nv + 1];
+  std::function<Real(Real x)> func1d =
+      bind<Real>(&Powell::f1dim2, this, placeholders::_1, x, direc, tempx);
   Mnbrak(xa, xx, xb, fa, f, fb, func1d);
   x[nv] = Brent(xa, xx, xb, tol, xmin, func1d);
   for (j = 0; j < nv; j++) {
@@ -161,20 +180,21 @@ void Powell::LineSearch(double* x, double* direc) {
   delete[] tempx;
 }
 
-int Powell::evolve(double*  x0,
-                   double** direc,
-                   int      maxiter,
-                   double   ftol,
-                   int      iter,
-                   double   terminalLine) {
+template <typename Real>
+int Powell<Real>::evolve(Real*  x0,
+                         Real** direc,
+                         int    maxiter,
+                         Real   ftol,
+                         int    iter,
+                         Real   terminalLine) {
   func(x0);
-  int     ret = 0;
-  double* x1 = new double[nv + 1];
-  double* x2 = new double[nv + 1];
-  double* direc1 = new double[nv];
-  int     bigind;
-  double  t, temp, fx, delta, fx2;
-  double& fval = x0[nv];
+  int   ret = 0;
+  Real* x1 = new Real[nv + 1];
+  Real* x2 = new Real[nv + 1];
+  Real* direc1 = new Real[nv];
+  int   bigind;
+  Real  t, temp, fx, delta, fx2;
+  Real& fval = x0[nv];
   while (1) {
     for (unsigned int j = 0; j < nv; j++) {
       x1[j] = x0[j];
@@ -243,17 +263,18 @@ int Powell::evolve(double*  x0,
   return ret;
 }
 
-int Powell::Optimize(double* x0,
-                     double  ftol,
-                     int     maxiter,
-                     int     iter,
-                     double  terminalLine) {
-  double** direc = new double*[nv];
-  direc[0] = new double[nv * nv];
+template <typename Real>
+int Powell<Real>::Optimize(Real* x0,
+                           Real  ftol,
+                           int   maxiter,
+                           int   iter,
+                           Real  terminalLine) {
+  Real** direc = new Real*[nv];
+  direc[0] = new Real[nv * nv];
   for (unsigned int i = 1; i != nv; ++i)
     direc[i] = direc[i - 1] + nv;
-  double fbest;
-  bool   flip = true;
+  Real fbest;
+  bool flip = true;
   for (int i = 0; i < 100; ++i) {
     if (flip)
       InitDirec(direc);
@@ -273,17 +294,18 @@ int Powell::Optimize(double* x0,
   return iter;
 }
 
-void Powell::Mnbrak(double& xa,
-                    double& xb,
-                    double& xc,
-                    double& fa,
-                    double& fb,
-                    double& fc,
-                    FUNC1D  func1d) {
-  double r, q, temp, gold = 1.618034;
-  double maxiter = 100;
-  int    glimit = 100;
-  double u, ulim, fu, tiny = 1e-30;
+template <typename Real>
+void Powell<Real>::Mnbrak(Real& xa,
+                          Real& xb,
+                          Real& xc,
+                          Real& fa,
+                          Real& fb,
+                          Real& fc,
+                          std::function<Real(Real x)> func1d) {
+  Real r, q, temp, gold = 1.618034;
+  Real maxiter = 100;
+  int  glimit = 100;
+  Real u, ulim, fu, tiny = 1e-30;
   fa = func1d(xa);
   fb = func1d(xb);
   if (fb > fa) {

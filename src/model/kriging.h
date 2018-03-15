@@ -1,90 +1,94 @@
+#ifndef METAOPT_KRIGING_H
+#define METAOPT_KRIGING_H
+
 #include <string>
 #include <cmath>
 
 using namespace std;
 
+template <typename Real>
 class Kriging
 {
  public:
   /*******************************************************************************
    * Prototypes for kriging/GEK model
    *******************************************************************************/
-  void initialize(int      ncorr,
-                  int      nconst_theta,
-                  int      nporder,
-                  int      nnorm,
-                  int      ndcmp,
-                  int      nParaOpt,
-                  int      nregular,
-                  int      ndim,
-                  int      npoints,
-                  int      nout_points,
-                  int      nny,
-                  double** xxx,
-                  double*  up,
-                  double*  low);
+  void initialize(int    ncorr,
+                  int    nconst_theta,
+                  int    nporder,
+                  int    nnorm,
+                  int    ndcmp,
+                  int    nParaOpt,
+                  int    nregular,
+                  int    ndim,
+                  int    npoints,
+                  int    nout_points,
+                  int    nny,
+                  Real** xxx,
+                  Real*  up,
+                  Real*  low);
   void readInput(string);
   void readRestart(string);
   void writeRestart(string);
 
-  void   training();
-  void   setPredict(int);
-  void   prediction();
-  void   predictionDB();
-  void   outputRSM();
-  void   destructor();
-  double predictor(double*);
-  double predictor_unNorm(double*);
-  double grad_predictor(double*, int);
+  void training();
+  void setPredict(int);
+  void prediction();
+  void predictionDB();
+  void outputRSM();
+  void destructor();
+  Real predictor(Real*);
+  Real predictor_unNorm(Real*);
+  Real grad_predictor(Real*, int);
 
-  double predictorMP(double*);
-  double predictorEI(double*);
-  double predictorPI(double*);
-  double predictorME(double*);
-  double predictorLCB(double*);
+  Real predictorMP(Real*);
+  Real predictorEI(Real*);
+  Real predictorPI(Real*);
+  Real predictorME(Real*);
+  Real predictorLCB(Real*);
 
-  double EI;
-  int    EIcons;
+  Real EI;
+  int  EIcons;
 
  protected:
-  void   fitting();
-  void   allocate();
-  double MSE(double*);
-  void   readXinput();
+  void fitting();
+  void allocate();
+  Real MSE(Real*);
+  void readXinput();
   /*----------------------------------------------------------------------------
     | about sampling data
     ----------------------------------------------------------------------------*/
   int n_dim; /* number of dimensions                            */
   int ny;    //		number of y_dimensions
 
-  int      out_points;
-  int      points; /* number of sample points                         */
-  double** xx;     /* sampling sites [point][dimension]               */
-  double** xbound;
-  double*  yy;   /* observed reponse [point]                        */
-  double** nyy;  //
-  int*     flag; /* internal variable for GEK and cokriging
-                    indicate which kind of varialbe one sample include
-                    ="0" for origional varialbe
-                    >"0" for gradient information
-                    indicates with repect which dimension
-                    the patial derivative is taken             */
-  int norm;      /* indicate if the data is normalized              */
+  int    out_points;
+  int    points; /* number of sample points                         */
+  Real** xx;     /* sampling sites [point][dimension]               */
+  Real** xbound;
+  Real*  yy;   /* observed reponse [point]                        */
+  Real** nyy;  //
+  int*   flag; /* internal variable for GEK and cokriging
+                  indicate which kind of varialbe one sample include
+                  ="0" for origional varialbe
+                  >"0" for gradient information
+                  indicates with repect which dimension
+                  the patial derivative is taken             */
+  int norm;    /* indicate if the data is normalized              */
 
   /*----------------------------------------------------------------------------
     | about correlation matrix
     ----------------------------------------------------------------------------*/
-  double*   yvi;    /* internal variable for y^T*v^(-1)                */
-  double**  nyvi;   /*n dim for yvi	*/
-  double*   rvi;    /* internal variable for r(x)^T*v^(-1)             */
-  double**  v;      /* internal variable for correlation matrix        */
-  double*** nv;     //
-  double*   diag;   /* diagonal of cholesky deompostion of v           */
-  double**  ndiag;  //
-  int       ninterp;
-  double**  Xinput;
-  int       isreadXinput;
-  int       porder; /* order of regression part                        */
+  Real*   yvi;    /* internal variable for y^T*v^(-1)                */
+  Real**  nyvi;   /*n dim for yvi	*/
+  Real*   rvi;    /* internal variable for r(x)^T*v^(-1)             */
+  Real**  v;      /* internal variable for correlation matrix        */
+  Real*** nv;     //
+  Real*   diag;   /* diagonal of cholesky deompostion of v           */
+  Real**  ndiag;  //
+  int     ninterp;
+  Real**  Xinput;
+  int     isreadXinput;
+  int     porder; /* order of regression part                        */
   /* 0 for constant regression (ordinary kriging )   */
   /* 1 for linear regression (universal kriging )    */
   int np; /* number of extra lines in correlation matrix     */
@@ -114,10 +118,10 @@ class Kriging
   /*----------------------------------------------------------------------------
     | For global trend function and unbiasedness condition
     ----------------------------------------------------------------------------*/
-  double*** nF;
-  double**  F;      /* Regression model for design matrix              */
-  double*   phi;    /* Regression model for correlation vector         */
-  double*   phibar; /* Regression model for correlation vector         */
+  Real*** nF;
+  Real**  F;      /* Regression model for design matrix              */
+  Real*   phi;    /* Regression model for correlation vector         */
+  Real*   phibar; /* Regression model for correlation vector         */
   /* only for grad predictor                         */
   int init_F; /* Indicate if F has been initialized              */
   /* 0 : not initialized                             */
@@ -140,124 +144,126 @@ class Kriging
   /* "0" for bridge function-based vfm               */
   /* "1" for cokriging                              */
 
-  const double PI = 3.14159265358979323846264338;
+  const Real PI = 3.14159265358979323846264338;
 
   // normal distribution
-  double Normal(double z) { return exp((-1) * z * z / 2) / sqrt(2 * PI); }
-  double NormSDist(const double z) {
+  Real Normal(Real z) { return exp((-1) * z * z / 2) / sqrt(2 * PI); }
+  Real NormSDist(const Real z) {
     // this guards against overflow
     if (z > 6) return 1;
     if (z < -6) return 0;
-    const double gamma = 0.231641900, a1 = 0.319381530, a2 = -0.356563782,
-                 a3 = 1.781477973, a4 = -1.821255978, a5 = 1.330274429;
-    double k = 1.0 / (1 + fabs(z) * gamma);
-    double n = k * (a1 + k * (a2 + k * (a3 + k * (a4 + k * a5))));
+    const Real gamma = 0.231641900, a1 = 0.319381530, a2 = -0.356563782,
+               a3 = 1.781477973, a4 = -1.821255978, a5 = 1.330274429;
+    Real k = 1.0 / (1 + fabs(z) * gamma);
+    Real n = k * (a1 + k * (a2 + k * (a3 + k * (a4 + k * a5))));
     n = 1 - Normal(z) * n;
     if (z < 0) return 1.0 - n;
     return n;
   }
 
  private:
-  int    predictor_vector();
-  int    correlation_matrix();
-  double process_variance();
+  int  predictor_vector();
+  int  correlation_matrix();
+  Real process_variance();
 
-  double correlation_determine_alpha();
+  Real correlation_determine_alpha();
 
   /*------------------------------------------------------------------------------
     |  Cal. correlation function
     ------------------------------------------------------------------------------*/
-  double correlation_of_r(double*, double*);
+  Real correlation_of_r(Real*, Real*);
 
   /*------------------------------------------------------------------------------
     | for cross correlation of GEK
     | First derivative of correlation function
     ------------------------------------------------------------------------------*/
-  double cross_correlation_of_r(double*, double*, int);
+  Real cross_correlation_of_r(Real*, Real*, int);
 
   /*------------------------------------------------------------------------------
     | for cross correlation of GEK
     | second derivative of correlation function
     ------------------------------------------------------------------------------*/
-  double cross_correlation_of_r2(double*, double*, int);
+  Real cross_correlation_of_r2(Real*, Real*, int);
 
   /*------------------------------------------------------------------------------
     | for cross correlation of GEK
     | second derivative of correlation function
     ------------------------------------------------------------------------------*/
-  double cross_correlation_of_r22(double*, double*, int, int);
+  Real cross_correlation_of_r22(Real*, Real*, int, int);
 
   /*------------------------------------------------------------------------------
     | for hyper parameter opt.
     ------------------------------------------------------------------------------*/
-  void   theta_init();
-  double MLE(double*);
-  double bridgefunction_rho();
-  double cokriging_gamma();
+  void theta_init();
+  Real MLE(Real*);
+  Real bridgefunction_rho();
+  Real cokriging_gamma();
 
   /*------------------------------------------------------------------------------
     | extral functions
     ------------------------------------------------------------------------------*/
-  double sign(double);
+  Real sign(Real);
   /*------------------------------------------------------------------------------
     | LU decomposition and solution of linear equations
     ------------------------------------------------------------------------------*/
-  void ludcmp(double**, int, int*, double*);
-  void lubksb(double**, int, int*, double[]);
+  void ludcmp(Real**, int, int*, Real*);
+  void lubksb(Real**, int, int*, Real[]);
 
   /*------------------------------------------------------------------------------
     | Cholesky decomposition and solution of linear equations A*x = b
     ------------------------------------------------------------------------------*/
-  int  choldcmp(double**, int, double[]);
-  void cholbksb(double**, int, double[], double[], double[]);
-  void ncholdcmp(double**, int, double[]);
-  void ncholbksb(double**, int, double[], double[], double[]);
+  int  choldcmp(Real**, int, Real[]);
+  void cholbksb(Real**, int, Real[], Real[], Real[]);
+  void ncholdcmp(Real**, int, Real[]);
+  void ncholbksb(Real**, int, Real[], Real[], Real[]);
 
   /*******************************************************************************
     Prototypes of functions
    *******************************************************************************/
 
-  int HookeAndJeeves(double*, int, double*, double*, int);
+  int HookeAndJeeves(Real*, int, Real*, Real*, int);
 
-  int output_theta_design_space(double* x,
-                                int     dim,
-                                double (*fpointer)(double*),
-                                double* lbd,
-                                double* ubd);
+  int output_theta_design_space(Real* x,
+                                int   dim,
+                                Real (*fpointer)(Real*),
+                                Real* lbd,
+                                Real* ubd);
 
-  double mle_val_and_diff(double* val, double* dmle);
-  int mle_beta_sigma(double* val);
-  int mle_optimization(double* x);
-  int mle_initialization(double* x);
-  int permutation_of_vector(double* array, int n);
+  Real mle_val_and_diff(Real* val, Real* dmle);
+  int mle_beta_sigma(Real* val);
+  int mle_optimization(Real* x);
+  int mle_initialization(Real* x);
+  int permutation_of_vector(Real* array, int n);
 
   /*----------------------------------------------------------------------------
     | For hyper parameters optimization, @R.Zimmermann, Dec. 2008
     ----------------------------------------------------------------------------*/
-  double*  theta;   /* correlation parameter [n_dim]                   */
-  double** ntheta;  //
-  double*  pk;      /* correlation parameter [n_dim]                   */
-  double** npk;
+  Real*  theta;   /* correlation parameter [n_dim]                   */
+  Real** ntheta;  //
+  Real*  pk;      /* correlation parameter [n_dim]                   */
+  Real** npk;
 
-  double mu; /* factor added to the diagonal of v               */
+  Real mu; /* factor added to the diagonal of v               */
   /* for regularization                              */
-  double  sigma_sq;  /* process variance, depending on theta and regbeta*/
-  double* nsigma_sq; /*n dim for sigmasq*/
-  double  mle;       /* conentrated likelihood function                 */
-  int     ncal_mle;  /* number of calculate mle                         */
-  int     h_dim;     /* number of total hyper parameters                */
-  double  rho;       /* The scaling change between yhf and ylf          */
+  Real  sigma_sq;  /* process variance, depending on theta and regbeta*/
+  Real* nsigma_sq; /*n dim for sigmasq*/
+  Real  mle;       /* conentrated likelihood function                 */
+  int   ncal_mle;  /* number of calculate mle                         */
+  int   h_dim;     /* number of total hyper parameters                */
+  Real  rho;       /* The scaling change between yhf and ylf          */
   /* rho, ylf and yhf are only for bridge function   */
-  double rho_flag; /* indicator for scaling between yhf and ylf       */
+  Real rho_flag; /* indicator for scaling between yhf and ylf       */
   /* 0 : no scaling                                  */
   /* 1 : constant, closed form                       */
-  double* ylf; /* Low fidelity value at samping sites             */
-  double* yhf; /* high fidelity value at samping sites            */
+  Real* ylf; /* Low fidelity value at samping sites             */
+  Real* yhf; /* high fidelity value at samping sites            */
   /*----------------------------------------------------------------------------
     | For cokriging
     ----------------------------------------------------------------------------*/
-  double** GAMMA;  /* regression matrix for linear scaling            */
-  double   rhobar; /* Relaxision constant for cross-correlation       */
-  double   gamma;  /* Ratio of variance of hi- and low fidelity model
+  Real** GAMMA;  /* regression matrix for linear scaling            */
+  Real   rhobar; /* Relaxision constant for cross-correlation       */
+  Real   gamma;  /* Ratio of variance of hi- and low fidelity model
                       for correlogram of cokriging                    */
 };
+
+#endif // METAOPT_KRIGING_H

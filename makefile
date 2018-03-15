@@ -1,10 +1,10 @@
 
-.PHONY: build clean
+.PHONY: build clean update-include
 
 build:
 	mkdir -p build
 	cd build; cmake ..
-	cd build; make
+	make -C ./build -j8
 
 update-header:
 	mkdir -p include
@@ -13,3 +13,6 @@ update-header:
 	wget https://raw.githubusercontent.com/effolkronium/random/master/include/effolkronium/random.hpp -O ./include/random.hpp
 	wget https://raw.githubusercontent.com/tanakh/cmdline/master/cmdline.h -O ./include/cmdline.hpp
 	wget https://raw.githubusercontent.com/progschj/ThreadPool/master/ThreadPool.h -O ./include/thread_pool.hpp
+
+clean:
+	-rm -rf build

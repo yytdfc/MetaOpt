@@ -15,12 +15,14 @@ add_definitions(-DHASH_VALUE -g)
 include_directories(include src)
 link_directories(.)
 
-aux_source_directory(src/doe        SRC)
+aux_source_directory(src            SRC)
 aux_source_directory(src/doe        SRC_DOE)
 aux_source_directory(src/model      SRC_MOD)
 aux_source_directory(src/optimizer  SRC_OPT)
 
-add_executable(meta example/numerical_case/numerical.cc ${SRC_DOE} ${SRC_MOD} ${SRC_OPT})
+add_library(metaopt SHARED ${SRC} ${SRC_DOE} ${SRC_MOD} ${SRC_OPT})
 
-target_link_libraries(meta glog)
+add_executable(numerical example/numerical_case/numerical.cc )
+
+target_link_libraries(numerical glog metaopt)
 

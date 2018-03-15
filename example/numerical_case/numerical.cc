@@ -68,7 +68,7 @@ int main(int argc, char* argv[]) {
   auto input = a.get<string>("input");
   int  prob;
   cout.setf(ios::scientific);
-  Surro obj1;
+  Surro<double> obj1;
   prob = obj1.readInput(input);
   switch (prob) {
     case 1:

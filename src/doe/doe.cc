@@ -1,21 +1,26 @@
 #include "doe.h"
-#include <iostream>
+#include "common.h"
 #include <fstream>
 using namespace std;
 
-Sample::Sample(int n, int num) {
+
+
+template class Doe<double>;
+
+template <typename Real>
+Doe<Real>::Doe(int n, int num) {
   ndim = n;
   nSample = num;
-  sample = new double*[ndim];
+  sample = new Real*[ndim];
   for (int i = 0; i < ndim; ++i) {
-    sample[i] = new double[nSample];
+    sample[i] = new Real[nSample];
   }
   ifadd = 0;
   hasSample = 0;
-  gen.seed(rd());
 }
 
-Sample::~Sample() {
+template <typename Real>
+Doe<Real>::~Doe() {
   for (int i = 0; i < ndim; ++i) {
     delete[] sample[i];
   }
@@ -28,7 +33,8 @@ Sample::~Sample() {
   }
 }
 
-void Sample::printSample(string str) {
+template <typename Real>
+void Doe<Real>::printSample(string str) {
   if (!hasSample) {
     cerr << "doesn't have sample!" << endl;
     return;
@@ -45,7 +51,8 @@ void Sample::printSample(string str) {
   fout.close();
 }
 
-void Sample::printAdd(string str) {
+template <typename Real>
+void Doe<Real>::printAdd(string str) {
   if (!ifadd) {
     cerr << "doesn't have sample!" << endl;
     return;
@@ -62,7 +69,8 @@ void Sample::printAdd(string str) {
   fout.close();
 }
 
-void Sample::genLHS() {
+template <typename Real>
+void Doe<Real>::gen() {
   int  i, j;
   int* list = new int[nSample];
   int  rand;
@@ -71,9 +79,9 @@ void Sample::genLHS() {
       list[j] = j;
     }
     for (j = 0; j < nSample; ++j) {
-      rand = randomInt(j, nSample - 1);
+      rand = Random::get<int>(j, nSample - 1);
       sample[i][j] = list[rand];
-      sample[i][j] = (sample[i][j] + randomDouble()) / nSample;
+      sample[i][j] = (sample[i][j] + Random::get<Real>(0, 1)) / nSample;
       list[rand] = list[j];
     }
   }
@@ -81,17 +89,19 @@ void Sample::genLHS() {
   delete[] list;
 }
 
-void Sample::genMC() {
+template <typename Real>
+void Doe<Real>::genMC() {
   int i, j;
   for (i = 0; i < ndim; ++i) {
     for (j = 0; j < nSample; ++j) {
-      sample[i][j] = randomDouble();
+      sample[i][j] = Random::get<Real>(0, 1);
     }
   }
   hasSample = 1;
 }
 
-void Sample::readSample(string str) {
+template <typename Real>
+void Doe<Real>::readSample(string str) {
   int      i, j;
   ifstream fin(str);
   for (i = 0; i < nSample; ++i) {
@@ -103,7 +113,8 @@ void Sample::readSample(string str) {
   hasSample = 1;
 }
 
-void Sample::addLHS(int num) {
+template <typename Real>
+void Doe<Real>::addLHS(int num) {
   if (!hasSample) {
     cerr << "doesn't have sample!" << endl;
     return;
@@ -111,9 +122,9 @@ void Sample::addLHS(int num) {
   int i, j, k;
   int position, rand;
   addNum = num;
-  addSample = new double*[ndim];
+  addSample = new Real*[ndim];
   for (i = 0; i < ndim; ++i) {
-    addSample[i] = new double[addNum];
+    addSample[i] = new Real[addNum];
   }
   int* map = new int[nSample + addNum];
   int* list = new int[addNum];
@@ -144,9 +155,10 @@ void Sample::addLHS(int num) {
     }
     // get LHS for add samples
     for (j = 0; j < addNum; ++j) {
-      rand = randomInt(j, addNum - 1);
+      rand = Random::get<int>(j, addNum - 1);
       addSample[i][j] = list[rand];
-      addSample[i][j] = (addSample[i][j] + randomDouble()) / (nSample + addNum);
+      addSample[i][j] =
+          (addSample[i][j] + Random::get<Real>(0, 1)) / (nSample + addNum);
       list[rand] = list[j];
     }
   }

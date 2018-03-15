@@ -1,31 +1,30 @@
-#include <iostream>
-#include <random>
+#ifndef METAOPT_DOE_H
+#define METAOPT_DOE_H
+
 #include <string>
-using namespace std;
-class Sample
+#include <vector>
+
+template <typename Real>
+class Doe
 {
  public:
-  Sample(int n, int num);
-  ~Sample();
-  void genLHS();
+  Doe(int n, int num);
+  ~Doe();
+  void gen();
   void genMC();
-  void readSample(string str);
+  void readSample(std::string str);
   void addLHS(int num);
-  void printSample(string str);
-  void printAdd(string str);
-  double** sample;
+  void printSample(std::string str);
+  void printAdd(std::string str);
+  Real** sample;
 
  private:
-  int                addNum;
-  int                ndim;
-  int                nSample;
-  double**           addSample;
-  bool               ifadd;
-  bool               hasSample;
-  std::random_device rd;
-  std::mt19937_64    gen;
-  /*return a random double in [0,1]*/
-  inline double randomDouble() { return ((double)gen() / gen.max()); }
-  /*return a random int in [a,b], (b-a+1) numbers can be gened*/
-  inline int randomInt(int a, int b) { return (gen() % (b - a + 1)) + a; }
+  int    addNum;
+  int    ndim;
+  int    nSample;
+  Real** addSample;
+  bool   ifadd;
+  bool   hasSample;
 };
+
+#endif  // METAOPT_DOE_H
