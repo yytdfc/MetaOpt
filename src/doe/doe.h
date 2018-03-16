@@ -16,7 +16,7 @@ class Doe
   void addLHS(int num);
   void printSample(std::string str);
   void printAdd(std::string str);
-  std::vector<std::vector <Real>> sample_;
+  std::vector<std::vector<Real>> sample_;
 
  private:
   int    addNum;

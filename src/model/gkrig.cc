@@ -12,12 +12,14 @@ Real GKrig<Real>::GKpredictorEI(Real* x) {
   GKsetPredict(0);
   dy = Kriging<Real>::EI - GKpredictor(x);
   s = Kriging<Real>::MSE(x);
-  x[Kriging<Real>::n_dim] = -dy * Kriging<Real>::NormSDist(dy / s) - s * Kriging<Real>::Normal(dy / s);
+  x[Kriging<Real>::n_dim] = -dy * Kriging<Real>::NormSDist(dy / s) -
+                            s * Kriging<Real>::Normal(dy / s);
   if (Kriging<Real>::EIcons) {
     for (int i = 1; i < Kriging<Real>::ny; i++) {
       GKsetPredict(i);
       x[Kriging<Real>::n_dim] =
-          x[Kriging<Real>::n_dim] * Kriging<Real>::NormSDist(GKpredictor(x) / Kriging<Real>::MSE(x));
+          x[Kriging<Real>::n_dim] *
+          Kriging<Real>::NormSDist(GKpredictor(x) / Kriging<Real>::MSE(x));
       x[Kriging<Real>::n_dim + i] = 1;
     }
   } else {
@@ -67,8 +69,9 @@ void GKrig<Real>::GKinitialize(int    ncorr,
                                Real** xx,
                                Real*  up,
                                Real*  low) {
-  Kriging<Real>::initialize(ncorr, nconst_theta, nporder, nnorm, ndcmp, nParaOpt, nregular,
-             ndim, points, nout_points, nny, xx, up, low);
+  Kriging<Real>::initialize(ncorr, nconst_theta, nporder, nnorm, ndcmp,
+                            nParaOpt, nregular, ndim, points, nout_points, nny,
+                            xx, up, low);
 }
 
 template <typename Real>

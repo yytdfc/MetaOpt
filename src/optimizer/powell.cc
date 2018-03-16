@@ -5,12 +5,10 @@
 
 using namespace std;
 
-template class Powell <double>;
+template class Powell<double>;
 
 template <typename Real>
-Powell<Real>::Powell() {
-
-}
+Powell<Real>::Powell() {}
 
 template <typename Real>
 Powell<Real>::Powell(int _nv) : nv(_nv) {}

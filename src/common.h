@@ -2,6 +2,9 @@
 #define METAOPT_COMMON_H
 // std
 #include <iostream>
+#include <string>
+#include <vector>
+#include <functional>
 // glog
 #include <glog/logging.h>
 // random

@@ -266,4 +266,4 @@ class Kriging
                       for correlogram of cokriging                    */
 };
 
-#endif // METAOPT_KRIGING_H
+#endif  // METAOPT_KRIGING_H

@@ -1,55 +1,45 @@
 #ifndef METAOPT_GA_H
 #define METAOPT_GA_H
-#include <string>
-#include <functional>
+#include "optimizer.h"
 
+namespace MetaOpt {
 template <typename Real>
-class GA
+class Ga : public Optimizer<Real>
 {
  public:
-  ~GA();
-  void GAinit(int   nv,
-              int   size,
-              int   nGen,
-              int   nCons,
-              Real  pCr,
-              Real  pMu,
-              Real* up,
-              Real* low);
-  void  setFx(std::function<Real(Real*)>);
-  void  evolve();
-  Real* best;
-  void  test();
+  Ga(const int               n_dim = 0,
+     const int               n_obj = 0,
+     const int               n_con = 0,
+     const Func<Real>        func = nullptr,
+     const std::vector<Real> upper = std::vector<Real>(),
+     const std::vector<Real> lower = std::vector<Real>(),
+     const int               n_population = 0,
+     const Real              p_crossover = 0.9,
+     const Real              p_mutation = 0.05);
+  ~Ga();
+  void opt();
 
-  void tourSelect(int k);
-  void SBXover(int k);
-  void linerXover(int k);
+  void tour_select(int k);
+  void simubinary_crossover(int k);
+  void liner_crossover(int k);
   void PBMutation(int k);
-  void rdMutation(int k);
-  void initialpop();
+  void select(Sample<Real>& s1, Sample<Real>& s2, Sample<Real>& s);
+  void crossover(Sample<Real>& s1, Sample<Real>& s2);
+  void mutation(Sample<Real>& s);
   void statistics();
-  void tourney();
 
- private:
-  std::function<Real(Real*)> fx;
-  int*                       tourlist;
-
-  int    nPop;  /* population size */
-  int    nGens; /* max. number of generations */
-  int    nVar;  /* no. of problem variables */
-  int    nCons;
-  int    generation;
-  Real*  consP;
-  Real   pCrossover; /* probability of SBXover */
-  Real   pMutation;  /* probability of PBMutation */
-  Real** pop;
-  Real** newpop;
-  Real*  upper; /* GT\'s variables upper bound */
-  Real*  lower; /* GT\'s variables lower bound */
-
-  Real nMutation;
-  Real nCrossover;
-  Real nm, nc;
-
+  int                       n_population_;
+  int                       n_generation_;
+  int                       i_generation_;
+  std::vector<Real>         cons_p_;
+  std::vector<Sample<Real>> population_;
+  std::vector<Sample<Real>> newpop_;
+  std::vector<int>          tourlist_;
+  Real                      p_crossover_;
+  Real                      p_mutation_;
+  Real                      i_mutation_;
+  Real                      i_crossover_;
+  Real                      nm = 1, nc = 1;
 };
-#endif // METAOPT_GA_H
+}
+#endif  // METAOPT_GA_H

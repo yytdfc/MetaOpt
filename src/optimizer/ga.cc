@@ -1,298 +1,228 @@
 #include "ga.h"
-#include "common.h"
-#include <fstream>
 using namespace std;
+namespace MetaOpt {
 
-template class GA<double>;
+template class Ga<double>;
 
 template <typename Real>
-void GA<Real>::setFx(std::function<Real(Real*)> f) {
-  fx = f;
+Ga<Real>::Ga(const int               n_dim,
+             const int               n_obj,
+             const int               n_con,
+             const Func<Real>        func,
+             const std::vector<Real> upper,
+             const std::vector<Real> lower,
+             const int               n_population,
+             const Real              p_crossover,
+             const Real              p_mutation)
+    : Optimizer<Real>(n_dim, n_obj, n_con, func, upper, lower) {
+  n_population_ = n_population > 0 ? n_population : 10 * n_dim;
+  n_generation_ = 10 * n_dim;
+  vector<int>(n_population_).swap(tourlist_);
+  int i = 0;
+  for (auto& t : tourlist_)
+    t = i++;
+  vector<Sample<Real>>(n_population_).swap(population_);
+  for (auto& p : population_)
+    this->sample().swap(p);
+  vector<Sample<Real>>(n_population_).swap(newpop_);
+  for (auto& p : newpop_)
+    this->sample().swap(p);
+  if (n_con > 0) vector<Real>(n_dim).swap(cons_p_);
+  p_crossover_ = 1 - pow(1 - p_crossover, 1.0 / n_dim);
+  p_mutation_ = 1 - pow(1 - p_mutation, 1.0 / n_dim);
+  LOG(INFO) << "Ga constructed.";
 }
 template <typename Real>
-void GA<Real>::GAinit(int   n,
-                      int   Pop,
-                      int   Gens,
-                      int   Cons,
-                      Real  pCr,
-                      Real  pMu,
-                      Real* up,
-                      Real* low) {
-  int i;
-  nPop = Pop;
-  nGens = Gens;
-  nVar = n;
-  nCons = Cons;
-  tourlist = new int[2 * nPop];
-  pop = new Real*[nPop];
-  pop[0] = new Real[nPop * (nVar + nCons + 1)];
-  for (i = 1; i < nPop; ++i) {
-    pop[i] = pop[i - 1] + nVar + nCons + 1;
-  }
-  newpop = new Real*[nPop];
-  newpop[0] = new Real[nPop * nVar];
-  for (i = 1; i < nPop; ++i) {
-    newpop[i] = newpop[i - 1] + nVar;
-  }
-  upper = new Real[nVar];
-  lower = new Real[nVar];
-  for (int i = 0; i < nVar; ++i) {
-    upper[i] = up[i];
-    lower[i] = low[i];
-  }
-  best = new Real[nVar + nCons + 1];
-  if (nCons > 0) {
-    consP = new Real[nPop];
-  }
-  pCrossover = 1 - pow(1 - pCr, 1.0 / nVar);
-  pMutation = 1 - pow(1 - pMu, 1.0 / nVar);
-  nm = 1, nc = 1;
-  cout << "GA constructed." << endl;
+Ga<Real>::~Ga() {
+  LOG(INFO) << "Ga destructed";
 }
 template <typename Real>
-GA<Real>::~GA() {
-  delete[] tourlist;
-  delete[] pop[0];
-  delete[] pop;
-  delete[] newpop[0];
-  delete[] newpop;
-  delete[] upper;
-  delete[] lower;
-  delete[] best;
-
-  if (nCons > 0) {
-    delete[] consP;
-  }
-  // cout << "GA destructed." << endl;
-}
-
-template <typename Real>
-void GA<Real>::evolve() {
-  int i, j, k;
-  initialpop();
-  for (generation = 0; generation < nGens; ++generation) {
-    tourney();
-    for (k = 0; k < nPop; k += 2) {
-      tourSelect(k);
-      SBXover(k);
-      PBMutation(k);
-      PBMutation(k + 1);
-    }
-    for (i = 0; i < nPop; ++i) {
-      for (j = 0; j < nVar; ++j) {
-        pop[i][j] = newpop[i][j];
-      }
-    }
+void Ga<Real>::opt() {
+  for (i_generation_ = 0; i_generation_ < n_generation_; ++i_generation_) {
     statistics();
-    // if (generation % 20 == 0){
-    //	cout << "Generation. " << generation + 1 <<
-    //		"\t best fit = \t" << best[nVar] << endl;
-    //}
-  }
-  // cout << "GA evolve finished. best fit = \t"
-  //	<< best[nVar] << endl;
-  // cout << "best x =" << endl;
-  // for (j = 0; j < nVar; ++j){
-  //	cout << best[j] << endl;
-  //}
-  // cout << "nMutation = \t"
-  //	<< nMutation << endl;
-  // cout << "nCrossover = \t"
-  //	<< nCrossover << endl;
-}
 
-template <typename Real>
-void GA<Real>::tourney() {
-  int i, rand, temp;
-  for (i = 0; i < nPop; ++i) {
-    tourlist[i] = i;
-    tourlist[i + nPop] = i;
-  }
-  for (i = 0; i < nPop; ++i) {
-    rand = Random::get<int>(0, nPop - 1);
-    temp = tourlist[rand];
-    tourlist[rand] = tourlist[i];
-    tourlist[i] = temp;
-  }
-  for (i = nPop; i < 2 * nPop; ++i) {
-    rand = Random::get<int>(nPop, 2 * nPop - 1);
-    temp = tourlist[rand];
-    tourlist[rand] = tourlist[i];
-    tourlist[i] = temp;
-  }
-}
-
-template <typename Real>
-void GA<Real>::tourSelect(int k) {
-  int i;
-  int s1, s2;
-  int kk = 2 * k;
-  s1 = tourlist[kk];
-  s2 = tourlist[kk + 1];
-  if (nCons > 0) {
-    if (consP[s1] > consP[s2])
-      s1 = s2;
-    else if (consP[s1] == 0 && consP[s2] == 0) {
-      if (pop[s1][nVar] > pop[s2][nVar]) s1 = s2;
+    Random::shuffle(tourlist_.begin(), tourlist_.end());
+    {
+      LOG(INFO) << "stat";
+      for (int i = 0; i < n_population_; ++i)
+        LOG(INFO) << "population[" << i << "]:  " << population_[i];
     }
-  } else {
-    if (pop[s1][nVar] > pop[s2][nVar]) s1 = s2;
-  }
-  for (i = 0; i < nVar; ++i)
-    newpop[k][i] = pop[s1][i];
-
-  s1 = tourlist[kk + 2];
-  s2 = tourlist[kk + 3];
-  if (nCons > 0) {
-    if (consP[s1] > consP[s2])
-      s1 = s2;
-    else if (consP[s1] == 0 && consP[s2] == 0) {
-      if (pop[s1][nVar] > pop[s2][nVar]) s1 = s2;
+    for (int k = 0; k != n_population_; ++k) {
+      select(population_[k], population_[tourlist_[k]], newpop_[k]);
+      // if (k % 2 == 1) crossover(newpop_[k], newpop_[k - 1]);
     }
-  } else {
-    if (pop[s1][nVar] > pop[s2][nVar]) s1 = s2;
-  }
-  for (i = 0; i < nVar; ++i)
-    newpop[k + 1][i] = pop[s1][i];
-}
-
-template <typename Real>
-void GA<Real>::SBXover(int k) {
-  // if (Random::get<Real>(0, 1) > pCrossover)
-  //	return;
-  int  i;
-  Real alpha, beta, mid, dif;
-  for (i = 0; i < nVar; ++i) {
-    if (Random::get<Real>(0, 1) < pCrossover) {
-      if (newpop[k][i] > newpop[k + 1][i]) swap(newpop[k][i], newpop[k + 1][i]);
-      mid = (newpop[k + 1][i] + newpop[k][i]) / 2;
-      dif = newpop[k + 1][i] - newpop[k][i];
-      if (dif < 1e-6) {
-        dif = 1e-6;
-      }
-
-      beta =
-          1 +
-          2 / dif * min(newpop[k][i] - lower[i], upper[i] - newpop[k + 1][i]);
-      alpha = 2 - pow(beta, -(nc + 1));
-      if (alpha > 2 - 1e-6) alpha = 2 - 1e-6;
-      alpha *= Random::get<Real>(0, 1);
-      if (alpha <= 1)
-        beta = pow(alpha, 1.0 / (nc + 1));
-      else
-        beta = 1.0 / pow(2 - alpha, 1.0 / (nc + 1));
-
-      newpop[k][i] = mid - 0.5 * beta * dif;
-      newpop[k + 1][i] = mid + 0.5 * beta * dif;
-      if (isnan(newpop[k][i]) || isinf(newpop[k][i]))
-        newpop[k][i] = Random::get<Real>(lower[i], upper[i]);
-      if (newpop[k][i] > upper[i]) newpop[k][i] = upper[i];
-      if (newpop[k][i] < lower[i]) newpop[k][i] = lower[i];
-      if (isnan(newpop[k + 1][i]) || isinf(newpop[k + 1][i]))
-        newpop[k][i] = Random::get<Real>(lower[i], upper[i]);
-      if (newpop[k + 1][i] > upper[i]) newpop[k + 1][i] = upper[i];
-      if (newpop[k + 1][i] < lower[i]) newpop[k + 1][i] = lower[i];
-      ++nCrossover;
+    {
+      LOG(INFO) << "select";
+      for (int i = 0; i < n_population_; ++i)
+        LOG(INFO) << "population[" << i << "]:  " << newpop_[i];
+    }
+    for (int k = 0; k != n_population_; k += 2) {
+      crossover(newpop_[k], newpop_[k + 1]);
+    }
+    {
+      LOG(INFO) << "crossover";
+      for (int i = 0; i < n_population_; ++i)
+        LOG(INFO) << "population[" << i << "]:  " << newpop_[i];
+    }
+    for (auto& p : newpop_) {
+      mutation(p);
+    }
+    {
+      LOG(INFO) << "mutation:";
+      for (int i = 0; i < n_population_; ++i)
+        LOG(INFO) << "population[" << i << "]:  " << newpop_[i];
+    }
+    for (int k = 0; k < n_population_; ++k) {
+      population_[k].swap(newpop_[k]);
+    }
+    LOG(INFO) << "xxxx:";
+    for (int i = 0; i < n_population_; ++i)
+      LOG(INFO) << "population[" << i << "]:  " << population_[i];
+    if (i_generation_ % 1 == 0) {
+      LOG(INFO) << "Generation " << i_generation_ + 1
+                << ", best: " << this->best_;
     }
   }
+  LOG(INFO) << "GA evolve finished.";
+  LOG(INFO) << "best:  " << this->best_;
+
+  LOG(INFO) << "nMutation = " << i_mutation_;
+  LOG(INFO) << "nCrossover = " << i_crossover_;
 }
 
 template <typename Real>
-void GA<Real>::linerXover(int k) {
-  // if (Random::get<Real>(0, 1) > pCrossover)
-  //	return;
-  int  i;
-  Real dif;
-  for (i = 0; i < nVar; ++i) {
-    if (Random::get<Real>(0, 1) < pCrossover) {
-      if (newpop[k][i] > newpop[k + 1][i]) swap(newpop[k][i], newpop[k + 1][i]);
-      dif = newpop[k + 1][i] - newpop[k][i];
-      newpop[k + 1][i] = newpop[k][i] + Random::get<Real>(0, 1) * dif;
-      newpop[k][i] = newpop[k][i] + Random::get<Real>(0, 1) * dif;
-      ++nCrossover;
-    }
-  }
-}
-
-template <typename Real>
-void GA<Real>::PBMutation(int k) {
-  // if (Random::get<Real>(0, 1) > pMutation)
-  //	return;
-  int i;
-  for (i = 0; i < nVar; ++i) {
-    if (Random::get<Real>(0, 1) < pMutation) {
-      Real u = Random::get<Real>(0, 1);
-      Real delta, deltamax;
-      deltamax = upper[i] - lower[i];
-      delta = min(newpop[k][i] - lower[i], upper[i] - newpop[k][i]) / deltamax;
-      if (u > 0.5) {
-        u = 1 - u;
-        delta = 1 - pow((2 * u + (1 - 2 * u) * pow(1 - delta, nm + 1)),
-                        1 / (nm + 1));
-      } else {
-        delta =
-            pow((2 * u + (1 - 2 * u) * pow(1 - delta, nm + 1)), 1 / (nm + 1)) -
-            1;
-      }
-      newpop[k][i] += delta * deltamax;
-      if (isnan(newpop[k][i]) || isinf(newpop[k][i]))
-        newpop[k][i] = Random::get<Real>(lower[i], upper[i]);
-      if (newpop[k][i] > upper[i]) newpop[k][i] = upper[i];
-      if (newpop[k][i] < lower[i]) newpop[k][i] = lower[i];
-      ++nMutation;
-    }
-  }
-}
-
-template <typename Real>
-void GA<Real>::rdMutation(int k) {
-  // if (Random::get<Real>(0, 1) > pMutation)
-  //	return;
-  int i;
-  for (i = 0; i < nVar; ++i) {
-    if (Random::get<Real>(0, 1) < pMutation) {
-      newpop[k][i] = Random::get<Real>(lower[i], upper[i]);
-      ++nMutation;
-    }
-  }
-}
-
-template <typename Real>
-void GA<Real>::initialpop() {
-  int i, j;
-  for (i = 0; i < nPop; ++i) {
-    for (j = 0; j < nVar; ++j) {
-      pop[i][j] = Random::get<Real>(lower[j], upper[j]);
-    }
-  }
-  // cout << "GA initialized." << endl;
-  best[nVar] = 1e9;
-  for (i = 0; i < nVar; ++i)
-    best[i] = pop[0][i];
-  statistics();
-}
-
-template <typename Real>
-void GA<Real>::statistics() {
-  int  i, j;
+void Ga<Real>::statistics() {
   bool flag = 1;
   int  bestn = -1;
-  for (i = 0; i < nPop; ++i) {
-    fx(pop[i]);
-    if (nCons > 0) {
-      flag = 1;
-      consP[i] = 0;
-      for (j = 0; j < nCons; ++j) {
-        if (pop[i][nVar + j + 1] < 0) {
-          consP[i] -= pop[i][nVar + j + 1];
-          flag = 0;
-        }
-      }
+  auto best = numeric_limits<Real>::infinity();
+  for (int i = 0; i < n_population_; ++i) {
+    this->evaluate(population_[i]);
+
+    // if (n_con_ > 0) {
+    //   flag = 1;
+    //   cons_p_[i] = 0;
+    //   for (int j = 0; j < n_con_; ++j) {
+    //     if (population_[i][n_dim_ + j + 1] < 0) {
+    //       cons_p_[i] -= population_[i][n_dim_ + j + 1];
+    //       flag = 0;
+    //     }
+    //   }
+    // }
+    if (best > std::get<1>(population_[i])[0] && flag){
+      bestn = i;
+      best = std::get<1>(population_[i])[0];
     }
-    if (best[nVar] > pop[i][nVar] && flag) bestn = i;
   }
   if (bestn != -1) {
-    for (i = 0; i < nCons + nVar + 1; ++i)
-      best[i] = pop[bestn][i];
+    this->best_ = population_[bestn];
   }
+}
+
+template <typename Real>
+void Ga<Real>::select(Sample<Real>& s1, Sample<Real>& s2, Sample<Real>& s) {
+  // LOG(INFO) << "select:" << std::get<1>(s1)[0] << ":" << std::get<1>(s2)[0];
+  // s.swap(std::get<1>(s1)[0] < std::get<1>(s2)[0] ? s1 : s2);
+  auto& ss = std::get<1>(s1)[0] < std::get<1>(s2)[0] ? s1 : s2;
+  for (int i = 0; i != this->n_dim_; ++i) {
+    std::get<0>(s)[i] = std::get<0>(ss)[i];
+  }
+  std::get<1>(s)[0] = std::get<1>(ss)[0];
+  // LOG(INFO) << "   get:" << std::get<1>(s)[0];
+}
+
+template <typename Real>
+void Ga<Real>::crossover(Sample<Real>& s1, Sample<Real>& s2) {
+  switch (1) {
+    case 0:
+      for (int i = 0; i != this->n_dim_; ++i) {
+        if (Random::get<Real>(0, 1) < p_crossover_) {
+          Real dif = std::get<0>(s2)[i] - std::get<0>(s1)[i];
+          std::get<0>(s2)[i] =
+              std::get<0>(s1)[i] + Random::get<Real>(0, 1) * dif;
+          std::get<0>(s1)[i] =
+              std::get<0>(s1)[i] + Random::get<Real>(0, 1) * dif;
+          ++i_crossover_;
+        }
+      }
+      break;
+    case 1:
+      for (int i = 0; i != this->n_dim_; ++i) {
+        if (Random::get<Real>(0, 1) < p_crossover_) {
+          auto& x1i = std::get<0>(s1)[i];
+          auto& x2i = std::get<0>(s2)[i];
+          if (x1i > x2i) swap(x1i, x2i);
+          Real mid = (x2i + x1i) / 2;
+          Real dif = x2i - x1i;
+          if (dif < 1e-6) {
+            dif = 1e-6;
+          }
+          Real beta =
+              1 + 2 / dif * min(x1i - this->lower_[i], this->upper_[i] - x2i);
+          Real alpha = 2 - pow(beta, -(nc + 1));
+          if (alpha > 2 - 1e-6) alpha = 2 - 1e-6;
+          alpha *= Random::get<Real>(0, 1);
+          if (alpha <= 1)
+            beta = pow(alpha, 1.0 / (nc + 1));
+          else
+            beta = 1.0 / pow(2 - alpha, 1.0 / (nc + 1));
+
+          x1i = mid - 0.5 * beta * dif;
+          x2i = mid + 0.5 * beta * dif;
+          if (isnan(x1i) || isinf(x1i))
+            x1i = Random::get<Real>(this->lower_[i], this->upper_[i]);
+          if (x1i > this->upper_[i]) x1i = this->upper_[i];
+          if (x1i < this->lower_[i]) x1i = this->lower_[i];
+          if (isnan(x2i) || isinf(x2i))
+            x2i = Random::get<Real>(this->lower_[i], this->upper_[i]);
+          if (x2i > this->upper_[i]) x2i = this->upper_[i];
+          if (x2i < this->lower_[i]) x2i = this->lower_[i];
+          ++i_crossover_;
+        }
+      }
+      break;
+  }
+  
+}
+
+template <typename Real>
+void Ga<Real>::mutation(Sample<Real>& s) {
+  switch (0) {
+    case 0:
+      for (int i = 0; i != this->n_dim_; ++i) {
+        if (Random::get<Real>(0, 1) < p_mutation_) {
+          std::get<0>(s)[i] =
+              Random::get<Real>(this->lower_[i], this->upper_[i]);
+          ++i_mutation_;
+        }
+      }
+    case 1:
+      for (int i = 0; i != this->n_dim_; ++i) {
+        if (Random::get<Real>(0, 1) < p_mutation_) {
+          auto& xi = std::get<0>(s)[i];
+          Real  u = Random::get<Real>(0, 1);
+          Real  deltamax = this->upper_[i] - this->lower_[i];
+          Real  delta =
+              min(xi - this->lower_[i], this->upper_[i] - xi) / deltamax;
+          if (u > 0.5) {
+            u = 1 - u;
+            delta = 1 - pow((2 * u + (1 - 2 * u) * pow(1 - delta, nm + 1)),
+                            1 / (nm + 1));
+          } else {
+            delta = pow((2 * u + (1 - 2 * u) * pow(1 - delta, nm + 1)),
+                        1 / (nm + 1)) -
+                    1;
+          }
+          xi += delta * deltamax;
+          if (isnan(xi) || isinf(xi))
+            xi = Random::get<Real>(this->lower_[i], this->upper_[i]);
+          if (xi > this->upper_[i])
+            xi = this->upper_[i];
+          else if (xi < this->lower_[i])
+            xi = this->lower_[i];
+          ++i_mutation_;
+        }
+      }
+      break;
+  }
+}
 }

@@ -409,6 +409,6 @@ void Surro<Real>::opt() {
   for (i = 0; i < n_dim_; ++i) {
     LOG(INFO) << "\t" << best[i] << endl;
   }
-  LOG(INFO) << "using " << (Real)(clock() - timer) / (Real)CLOCKS_PER_SEC << " secs"
-       << endl;
+  LOG(INFO) << "using " << (Real)(clock() - timer) / (Real)CLOCKS_PER_SEC
+            << " secs" << endl;
 }

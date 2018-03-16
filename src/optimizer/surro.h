@@ -78,7 +78,6 @@ class Surro
   int krig_regular;
   int krig_out_points;
   int krig_EIcons;
-
 };
 
-#endif // METAOPT_SURRO_H
+#endif  // METAOPT_SURRO_H

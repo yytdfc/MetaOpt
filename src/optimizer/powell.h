@@ -60,4 +60,4 @@ class Powell
 
   inline Real sgn(Real x) { return x < 0 ? -1 : (x == 0 ? 0 : 1); }
 };
-#endif // METAOPT_POWELL_H
+#endif  // METAOPT_POWELL_H

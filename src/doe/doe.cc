@@ -3,20 +3,17 @@
 #include <fstream>
 using namespace std;
 
-
-
 template class Doe<double>;
 
 template <typename Real>
-Doe<Real>::Doe(int n_dim, int n_sample): n_dim_(n_dim), n_sample_(n_sample) {
-  vector<vector<Real>>(n_dim_, vector<double>(n_sample_)).swap(sample_);
+Doe<Real>::Doe(int n_dim, int n_sample) : n_dim_(n_dim), n_sample_(n_sample) {
+  vector<vector<Real>>(n_dim_, vector<Real>(n_sample_)).swap(sample_);
   ifadd = 0;
   hasSample = 0;
 }
 
 template <typename Real>
-Doe<Real>::~Doe() {
-}
+Doe<Real>::~Doe() {}
 
 template <typename Real>
 void Doe<Real>::printSample(string str) {
