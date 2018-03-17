@@ -14,16 +14,16 @@ class Ga : public Optimizer<Real>
      const std::vector<Real> upper = std::vector<Real>(),
      const std::vector<Real> lower = std::vector<Real>(),
      const int               n_population = 0,
+     const int               n_generation = 0,
      const Real              p_crossover = 0.9,
      const Real              p_mutation = 0.05);
   ~Ga();
   void opt();
-
   void tour_select(int k);
   void simubinary_crossover(int k);
   void liner_crossover(int k);
   void PBMutation(int k);
-  void select(Sample<Real>& s1, Sample<Real>& s2, Sample<Real>& s);
+  Sample<Real>& select(Sample<Real>& s1, Sample<Real>& s2);
   void crossover(Sample<Real>& s1, Sample<Real>& s2);
   void mutation(Sample<Real>& s);
   void statistics();
@@ -41,5 +41,6 @@ class Ga : public Optimizer<Real>
   Real                      i_crossover_;
   Real                      nm = 1, nc = 1;
 };
-}
+
+} // namespace MetaOpt
 #endif  // METAOPT_GA_H

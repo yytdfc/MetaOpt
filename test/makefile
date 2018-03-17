@@ -18,7 +18,7 @@ run: $(EXES)
 
 
 %: %.cc
-	$(CXX) $(CXX_FLAG) $< ../src/optimizer/ga.cc $(LD_FLAGS) -o $@
+	$(CXX) $(CXX_FLAG) $<  $(LD_FLAGS) -o $@  ../src/optimizer/ga.cc
 	chmod +x $@
 
 clean:
