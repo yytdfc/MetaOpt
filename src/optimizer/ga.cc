@@ -15,14 +15,10 @@ Ga<Real>::Ga(const int               n_dim,
     : Optimizer<Real>(n_dim, n_obj, n_con, func, upper, lower) {
   n_population_ = n_population > 0 ? n_population : 10 * n_dim;
   n_generation_ = n_generation > 0 ? n_generation : 20 * n_dim;
-  tourlist_ = vector<int>(n_population_);
-  int i = 0;
-  for (auto& t : tourlist_)
-    t = i++;
-  population_ = vector<Sample<Real>>(n_population_);
+  population_ = Samples<Real>(n_population_);
   for (auto& p : population_)
     p = this->sample();
-  newpop_ = vector<Sample<Real>>(n_population_);
+  newpop_ = Samples<Real>(n_population_);
   for (auto& p : newpop_)
     p = this->sample();
   cons_p_ = vector<Real>(n_population_, 0);
@@ -33,10 +29,13 @@ template <typename Real>
 Ga<Real>::~Ga() {}
 template <typename Real>
 void Ga<Real>::opt() {
+  tourlist_ = vector<int>(n_population_);
+  int i = 0;
+  for (auto& t : tourlist_)
+    t = i++;
   for (i_generation_ = 0; i_generation_ < n_generation_; ++i_generation_) {
     statistics();
-
-    Random::shuffle(tourlist_.begin(), tourlist_.end());
+    Random::shuffle(tourlist_);
     for (int k = 0; k != n_population_; ++k) {
       newpop_[k] = select(population_[k], population_[tourlist_[k]]);
     }
