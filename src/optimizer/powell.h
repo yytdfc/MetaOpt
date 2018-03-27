@@ -1,63 +1,60 @@
-#ifndef METAOPT_POWELL_H
-#define METAOPT_POWELL_H
-#include <string>
-#include <vector>
-#include <functional>
+#ifndef METAOPT_OPTIMIZER_POWELL_H
+#define METAOPT_OPTIMIZER_POWELL_H
+#include "optimizer.h"
 
+namespace MetaOpt {
 template <typename Real>
-class Powell
+class Powell : public Optimizer<Real>
 {
  public:
-  Powell();
-  Powell(int _nv);
-  Powell(int _nv, std::function<Real(Real* x)> f);
-  ~Powell();
+  Powell(const int n_dim = 0, const Func<Real> func = nullptr)
+      : Optimizer<Real>(n_dim, 1, 0, func){};
+  ~Powell(){};
   void SetFx(std::function<Real(Real* x)>);
   void SetBracktRange(Real range);
   void InitDirec(Real** direc);
   void InitReverseDirec(Real** direc);
   void InitRandomDirec(Real** direc);
-  void LineSearch(Real p[], Real xi[]);
-  Real f1dim2(Real alpha, Real* x, Real* p, Real* temp);
-  Real Brent(Real  xa,
-             Real  xb,
-             Real  xc,
-             Real  tol,
-             Real& xmin,
+  void LineSearch(Sample<Real>&, Real xi[]);
+  Real f1dim2(Real alpha, Sample<Real>& x, Real* p, Sample<Real>& temp);
+  Real Brent(Real                        xa,
+             Real                        xb,
+             Real                        xc,
+             Real                        tol,
+             Real&                       xmin,
              std::function<Real(Real x)> func1d);
   void erase(Real pbar[], Real prr[], Real pr[]);
-  int evolve(Real*  x0,
-             Real** direc,
-             int    maxiter,
-             Real   ftol,
-             int    dispIter = 0,
-             Real   terminalLine = -10000);
-  int Optimize(Real p[],
-               Real ftol,
-               int  maxiter = 1000,
-               int  dispIter = 0,
-               Real terminalLine = -10000);
-  int amoeba(Real* x, Real ftol, int dispIter);
-  void Mnbrak(Real& ax,
-              Real& bx,
-              Real& cx,
-              Real& fa,
-              Real& fb,
-              Real& fc,
+  int  evolve(Sample<Real>& x0,
+              Real**        direc,
+              int           maxiter,
+              Real          ftol,
+              int           dispIter = 0,
+              Real          terminalLine = -10000);
+  void opt(Sample<Real>& p,
+           Real          ftol = 1e-8,
+           int           maxiter = 1000,
+           int           dispIter = 0,
+           Real          terminalLine = -10000);
+  int  amoeba(Real* x, Real ftol, int dispIter);
+  void Mnbrak(Real&                       ax,
+              Real&                       bx,
+              Real&                       cx,
+              Real&                       fa,
+              Real&                       fb,
+              Real&                       fc,
               std::function<Real(Real x)> func1d);
-  void Bracket(Real& ax,
-               Real& bx,
-               Real& cx,
-               Real& fa,
-               Real& fb,
-               Real& fc,
+  void Bracket(Real&                       ax,
+               Real&                       bx,
+               Real&                       cx,
+               Real&                       fa,
+               Real&                       fb,
+               Real&                       fc,
                std::function<Real(Real x)> func1d);
 
  private:
-  std::function<Real(Real* x)> func;
-  int                          nv;
-  Real                         brackeRange;
+  Real brackeRange;
 
   inline Real sgn(Real x) { return x < 0 ? -1 : (x == 0 ? 0 : 1); }
 };
-#endif  // METAOPT_POWELL_H
+}  // namespace MetaOpt
+#endif  // METAOPT_OPTIMIZER_POWELL_H

@@ -1,27 +1,25 @@
 #include "ga.h"
+#include "doe.h"
 using namespace std;
 namespace MetaOpt {
 template <typename Real>
-Ga<Real>::Ga(const int               n_dim,
-             const int               n_obj,
-             const int               n_con,
-             const Func<Real>        func,
-             const std::vector<Real> upper,
-             const std::vector<Real> lower,
-             const int               n_population,
-             const int               n_generation,
-             const Real              p_crossover,
-             const Real              p_mutation)
-    : Optimizer<Real>(n_dim, n_obj, n_con, func, upper, lower) {
+Ga<Real>::Ga(const int                n_dim,
+             const int                n_obj,
+             const int                n_con,
+             const Func<Real>         func,
+             const std::vector<Real>& lower,
+             const std::vector<Real>& upper,
+             const int                n_population,
+             const int                n_generation,
+             const Real               p_crossover,
+             const Real               p_mutation)
+    : Optimizer<Real>(n_dim, n_obj, n_con, func, lower, upper) {
   n_population_ = n_population > 0 ? n_population : 10 * n_dim;
   n_generation_ = n_generation > 0 ? n_generation : 20 * n_dim;
-  population_ = Samples<Real>(n_population_);
-  for (auto& p : population_)
-    p = this->sample();
-  newpop_ = Samples<Real>(n_population_);
-  for (auto& p : newpop_)
-    p = this->sample();
-  cons_p_ = vector<Real>(n_population_, 0);
+  population_ =
+      Doe<Real, LHS>::gen(n_population_, n_dim, lower, upper, n_obj, n_con);
+  newpop_ =
+      Doe<Real, ZERO>::gen(n_population_, n_dim, lower, upper, n_obj, n_con);
   p_crossover_ = 1 - pow(1 - p_crossover, 1.0 / n_dim);
   p_mutation_ = 1 - pow(1 - p_mutation, 1.0 / n_dim);
 }
@@ -48,15 +46,15 @@ void Ga<Real>::opt() {
     for (int k = 0; k < n_population_; ++k) {
       population_[k].swap(newpop_[k]);
     }
-    if (i_generation_ % 10 == 0) {
-      LOG(INFO) << "Generation " << i_generation_ + 1
-                << ", best: " << this->best_;
-    }
+    // if (i_generation_ % 10 == 0) {
+    //   LOG(INFO) << "Generation " << i_generation_ + 1
+    //             << ", best: " << this->best_;
+    // }
   }
-  LOG(INFO) << "Ga opt finished, best:  " << this->best_;
-  LOG(INFO) << "n_evaluation = " << this->n_evaluation_
-            << ", n_mutation = " << i_mutation_
-            << ", n_crossover = " << i_crossover_;
+  // LOG(INFO) << "Ga opt finished, best:  " << this->best_;
+  // LOG(INFO) << "n_evaluation = " << this->n_evaluation_
+  //           << ", n_mutation = " << i_mutation_
+  //           << ", n_crossover = " << i_crossover_;
 }
 
 template <typename Real>

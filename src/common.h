@@ -13,14 +13,14 @@ using Random = effolkronium::random_static;
 
 // ostream
 template <typename T>
-std::ostream &operator<<(std::ostream &s, const std::vector<T> &v) {
+std::ostream& operator<<(std::ostream& s, const std::vector<T>& v) {
   s.put('[');
   char comma[3] = {'\0', ' ', '\0'};
-  for (const auto &e : v) {
+  for (const auto& e : v) {
     s << comma << e;
     comma[0] = ',';
   }
   return s << ']';
 }
 
-#endif // METAOPT_COMMON_H
+#endif  // METAOPT_COMMON_H

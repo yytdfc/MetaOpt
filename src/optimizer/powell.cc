@@ -1,34 +1,16 @@
 #include "powell.h"
-#include "common.h"
 #include <cmath>
 #include <ctime>
+#include "common.h"
 
 using namespace std;
 
-template class Powell<double>;
-
-template <typename Real>
-Powell<Real>::Powell() {}
-
-template <typename Real>
-Powell<Real>::Powell(int _nv) : nv(_nv) {}
-
-template <typename Real>
-Powell<Real>::Powell(int _nv, std::function<Real(Real* x)> f)
-    : nv(_nv), func(f) {}
-
-template <typename Real>
-Powell<Real>::~Powell() {}
-
-template <typename Real>
-void Powell<Real>::SetFx(std::function<Real(Real* x)> f) {
-  func = f;
-}
+namespace MetaOpt {
 
 template <typename Real>
 void Powell<Real>::InitDirec(Real** direc) {
-  for (unsigned int i = 0; i != nv; ++i) {
-    for (unsigned int j = 0; j < nv; j++) {
+  for (unsigned int i = 0; i != this->n_dim_; ++i) {
+    for (unsigned int j = 0; j != this->n_dim_; ++j) {
       direc[i][j] = 0;
     }
     direc[i][i] = 1.0;
@@ -36,8 +18,8 @@ void Powell<Real>::InitDirec(Real** direc) {
 }
 template <typename Real>
 void Powell<Real>::InitReverseDirec(Real** direc) {
-  for (unsigned int i = 0; i != nv; ++i) {
-    for (unsigned int j = 0; j < nv; j++) {
+  for (unsigned int i = 0; i != this->n_dim_; ++i) {
+    for (unsigned int j = 0; j != this->n_dim_; ++j) {
       direc[i][j] = 0;
     }
     direc[i][i] = -1.0;
@@ -45,27 +27,31 @@ void Powell<Real>::InitReverseDirec(Real** direc) {
 }
 template <typename Real>
 void Powell<Real>::InitRandomDirec(Real** direc) {
-  for (unsigned int i = 0; i != nv; ++i) {
-    for (unsigned int j = 0; j < nv; j++) {
+  for (unsigned int i = 0; i != this->n_dim_; ++i) {
+    for (unsigned int j = 0; j != this->n_dim_; ++j) {
       direc[i][j] = Random::get<Real>(0, 1);
     }
   }
 }
 
 template <typename Real>
-Real Powell<Real>::f1dim2(Real alpha, Real* x, Real* p, Real* temp) {
-  for (int j = 0; j < nv; j++) {
-    temp[j] = x[j] + alpha * p[j];
+Real Powell<Real>::f1dim2(Real          alpha,
+                          Sample<Real>& x,
+                          Real*         p,
+                          Sample<Real>& temp) {
+  for (int j = 0; j != this->n_dim_; ++j) {
+    temp.x()[j] = x.x()[j] + alpha * p[j];
   }
-  return func(temp);
+  this->evaluate(temp);
+  return temp.obj()[0];
 }
 
 template <typename Real>
-Real Powell<Real>::Brent(Real  xa,
-                         Real  xb,
-                         Real  xc,
-                         Real  tol,
-                         Real& xmin,
+Real Powell<Real>::Brent(Real                        xa,
+                         Real                        xb,
+                         Real                        xc,
+                         Real                        tol,
+                         Real&                       xmin,
                          std::function<Real(Real x)> func1d) {
   int        done, maxiter = 100;
   const Real mintol = 1.0e-11, cgold = 0.381966;
@@ -82,7 +68,6 @@ Real Powell<Real>::Brent(Real  xa,
   }
   deltax = 0.0;
   for (int iter = 1; iter <= maxiter; iter++) {
-    // cout<<" brent iter "<<iter<<endl;
     tol1 = tol * fabs(x) + mintol;
     tol2 = 2.0 * tol1;
     xmid = 0.5 * (a + b);
@@ -161,46 +146,43 @@ Real Powell<Real>::Brent(Real  xa,
 }
 
 template <typename Real>
-void Powell<Real>::LineSearch(Real* x, Real* direc) {
-  int   j;
-  Real  tol = 1e-4;
-  Real  fa, f, fb, xb, xa = 0.0;
-  Real  xmin, xx = 1.0;
-  Real* tempx = new Real[nv + 1];
+void Powell<Real>::LineSearch(Sample<Real>& x, Real* direc) {
+  int                         j;
+  Real                        tol = 1e-4;
+  Real                        fa, f, fb, xb, xa = 0.0;
+  Real                        xmin, xx = 1.0;
+  Sample<Real>                tempx = this->sample();
   std::function<Real(Real x)> func1d =
-      bind<Real>(&Powell::f1dim2, this, placeholders::_1, x, direc, tempx);
+      std::bind(&Powell<Real>::f1dim2, this, placeholders::_1, x, direc, tempx);
   Mnbrak(xa, xx, xb, fa, f, fb, func1d);
-  x[nv] = Brent(xa, xx, xb, tol, xmin, func1d);
-  for (j = 0; j < nv; j++) {
+  x.obj()[0] = Brent(xa, xx, xb, tol, xmin, func1d);
+  for (j = 0; j != this->n_dim_; ++j) {
     direc[j] = xmin * direc[j];
-    x[j] = x[j] + direc[j];
+    x.x()[j] = x.x()[j] + direc[j];
   }
-  delete[] tempx;
 }
 
 template <typename Real>
-int Powell<Real>::evolve(Real*  x0,
-                         Real** direc,
-                         int    maxiter,
-                         Real   ftol,
-                         int    iter,
-                         Real   terminalLine) {
-  func(x0);
-  int   ret = 0;
-  Real* x1 = new Real[nv + 1];
-  Real* x2 = new Real[nv + 1];
-  Real* direc1 = new Real[nv];
-  int   bigind;
-  Real  t, temp, fx, delta, fx2;
-  Real& fval = x0[nv];
+int Powell<Real>::evolve(Sample<Real>& x0,
+                         Real**        direc,
+                         int           maxiter,
+                         Real          ftol,
+                         int           iter,
+                         Real          terminalLine) {
+  this->evaluate(x0);
+  int          ret = 0;
+  Sample<Real> x1 = this->sample();
+  Sample<Real> x2 = this->sample();
+  Real*        direc1 = new Real[this->n_dim_];
+  int          bigind;
+  Real         t, temp, fx, delta, fx2;
+  Real&        fval = x0.obj()[0];
   while (1) {
-    for (unsigned int j = 0; j < nv; j++) {
-      x1[j] = x0[j];
-    }
+    x1 = x0;
     fx = fval;
     bigind = 0;
     delta = 0.0;
-    for (unsigned int i = 0; i < nv; i++) {
+    for (unsigned int i = 0; i < this->n_dim_; i++) {
       fx2 = fval;
       LineSearch(x0, direc[i]);
       if (fval < terminalLine) {
@@ -217,11 +199,12 @@ int Powell<Real>::evolve(Real*  x0,
       break;
     }
     // Construct the extrapolated point
-    for (unsigned int j = 0; j < nv; j++) {
-      direc1[j] = x0[j] - x1[j];
-      x2[j] = x0[j] + direc1[j];
+    for (unsigned int j = 0; j != this->n_dim_; ++j) {
+      direc1[j] = x0.x()[j] - x1.x()[j];
+      x2.x()[j] = x0.x()[j] + direc1[j];
     }
-    fx2 = func(x2);
+    this->evaluate(x2);
+    fx2 = x2.obj()[0];
     if (fx > fx2) {
       t = 2.0 * (fx + fx2 - 2.0 * fval);
       temp = fx - fval - delta;
@@ -234,14 +217,15 @@ int Powell<Real>::evolve(Real*  x0,
           ret = iter;
           break;
         }
-        for (unsigned int j = 0; j < nv; j++) {
-          direc[bigind][j] = direc[nv - 1][j];
-          direc[nv - 1][j] = direc1[j];
+        for (unsigned int j = 0; j != this->n_dim_; ++j) {
+          direc[bigind][j] = direc[this->n_dim_ - 1][j];
+          direc[this->n_dim_ - 1][j] = direc1[j];
         }
       }
     }
     iter = iter + 1;
-    cout << "Iter = " << iter << ", func = " << fval << endl;
+    // LOG(INFO) << "Iter = " << iter << ", func = " << fval << ", n_evaluation
+    // = " << this->n_evaluation_;
     if (fabs(fx - fval) < ftol) {
       ret = iter;
       break;
@@ -250,27 +234,25 @@ int Powell<Real>::evolve(Real*  x0,
     //	break;
     //}
     if (iter >= maxiter) {
-      // cout<<"powell exceeding maximum iterations"<<endl;
-      ret = 0;
+      // cout<<"powell exceeding maximum iterations"<<"  "<<ret<<endl;
+      ret = iter;
       break;
     }
   }
   delete[] direc1;
-  delete[] x1;
-  delete[] x2;
   return ret;
 }
 
 template <typename Real>
-int Powell<Real>::Optimize(Real* x0,
-                           Real  ftol,
-                           int   maxiter,
-                           int   iter,
-                           Real  terminalLine) {
-  Real** direc = new Real*[nv];
-  direc[0] = new Real[nv * nv];
-  for (unsigned int i = 1; i != nv; ++i)
-    direc[i] = direc[i - 1] + nv;
+void Powell<Real>::opt(Sample<Real>& x0,
+                       Real          ftol,
+                       int           maxiter,
+                       int           iter,
+                       Real          terminalLine) {
+  Real** direc = new Real*[this->n_dim_];
+  direc[0] = new Real[this->n_dim_ * this->n_dim_];
+  for (unsigned int i = 1; i != this->n_dim_; ++i)
+    direc[i] = direc[i - 1] + this->n_dim_;
   Real fbest;
   bool flip = true;
   for (int i = 0; i < 100; ++i) {
@@ -280,25 +262,26 @@ int Powell<Real>::Optimize(Real* x0,
       InitReverseDirec(direc);
     flip = !flip;
     iter = evolve(x0, direc, maxiter, ftol, iter, terminalLine);
-
-    if (fabs(x0[nv] - fbest) < ftol) {
+    LOG(INFO) << "Iter: " << iter << ", best: " << x0
+              << ", n_evaluation: " << this->n_evaluation_;
+    if (fabs(x0.obj()[0] - fbest) < ftol || iter >= maxiter) {
       break;
     }
-    fbest = x0[nv];
+    fbest = x0.obj()[0];
   }
 
   delete[] direc[0];
   delete[] direc;
-  return iter;
+  return;
 }
 
 template <typename Real>
-void Powell<Real>::Mnbrak(Real& xa,
-                          Real& xb,
-                          Real& xc,
-                          Real& fa,
-                          Real& fb,
-                          Real& fc,
+void Powell<Real>::Mnbrak(Real&                       xa,
+                          Real&                       xb,
+                          Real&                       xc,
+                          Real&                       fa,
+                          Real&                       fb,
+                          Real&                       fc,
                           std::function<Real(Real x)> func1d) {
   Real r, q, temp, gold = 1.618034;
   Real maxiter = 100;
@@ -380,3 +363,5 @@ void Powell<Real>::Mnbrak(Real& xa,
     fc = fu;
   }
 }
+template class Powell<double>;
+}  // namespace MetaOpt

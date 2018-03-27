@@ -1,9 +1,10 @@
 #ifndef METAOPT_SAMPLE_H
 #define METAOPT_SAMPLE_H
 
+#include <functional>
 #include <iostream>
 #include <vector>
-#include <functional>
+#include "common.h"
 
 namespace MetaOpt {
 
@@ -15,10 +16,14 @@ class Sample
 {
  public:
   Sample(){};
-  Sample(int n_x, int n_obj, int n_con): x_(std::vector<Real>(n_x, 0)),
-      obj_(std::vector<Real>(n_obj, std::numeric_limits<Real>::infinity())),
-      con_(std::vector<Real>(n_con, -1)){};
-  Sample(std::vector<Real> x, std::vector<Real> obj, std::vector<Real> con)
+  Sample(const int n_dim, const int n_obj = 1, const int n_con = 0)
+      : x_(std::vector<Real>(n_dim, 0)),
+        obj_(std::vector<Real>(n_obj, std::numeric_limits<Real>::infinity())),
+        con_(std::vector<Real>(n_con, -1)){};
+  Sample(std::vector<Real> x,
+         std::vector<Real> obj =
+             std::vector<Real>(1, std::numeric_limits<Real>::infinity()),
+         std::vector<Real> con = std::vector<Real>(0))
       : x_(x), obj_(obj), con_(con){};
   Sample(const Sample& s) : x_(s.x_), obj_(s.obj_), con_(s.con_){};
   Sample(Sample&& s) : x_(move(s.x_)), obj_(move(s.obj_)), con_(move(s.con_)){};
