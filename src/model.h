@@ -20,31 +20,31 @@ class Model
     if (samples.empty()) return;
     samples_ = samples;
     n_sample_ = samples_.size();
-    n_dim_ = samples_[0].x().size();
+    n_x_ = samples_[0].x().size();
     n_y_ = samples_[0].obj().size() + samples_[0].con().size();
     if (i_norm_) {
-      mean_ = std::vector<Real>(n_dim_, 0);
-      st_ = std::vector<Real>(n_dim_, 0);
+      mean_ = std::vector<Real>(n_x_, 0);
+      st_ = std::vector<Real>(n_x_, 0);
       for (auto& s : samples_) {
-        for (int i = 0; i != n_dim_; ++i) {
+        for (int i = 0; i != n_x_; ++i) {
           mean_[i] += s.x()[i];
         }
       }
-      for (int i = 0; i != n_dim_; ++i) {
+      for (int i = 0; i != n_x_; ++i) {
         mean_[i] /= n_sample_;
       }
       for (auto& s : samples_) {
-        for (int i = 0; i != n_dim_; ++i) {
+        for (int i = 0; i != n_x_; ++i) {
           st_[i] += pow(s.x()[i] - mean_[i], 2);
         }
       }
-      for (int i = 0; i != n_dim_; ++i) {
+      for (int i = 0; i != n_x_; ++i) {
         st_[i] = sqrt(st_[i] / n_sample_);
         if (st_[i] <= std::numeric_limits<Real>::min())
           st_[i] = std::numeric_limits<Real>::min();
       }
       for (auto& s : samples_) {
-        for (int i = 0; i != n_dim_; ++i) {
+        for (int i = 0; i != n_x_; ++i) {
           s.x()[i] = (s.x()[i] - mean_[i]) / st_[i];
         }
       }
@@ -53,7 +53,7 @@ class Model
   void evaluate(Sample<Real>& sample);
   // void              evaluate(Samples<Real>& samples, int n_thread = 1);
   void              fit(const Samples<Real>& samples = nullptr);
-  int               n_dim_;
+  int               n_x_;
   int               n_y_;
   int               n_sample_;
   std::vector<Real> mean_;

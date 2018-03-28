@@ -1,10 +1,10 @@
 #ifndef METAOPT_DOE_H
 #define METAOPT_DOE_H
 
-#include "random.hpp"
+#include "random.h"
 #include "sample.h"
 
-using Random = effolkronium::random_static;
+// using Random = effolkronium::random_static;
 
 namespace MetaOpt {
 
@@ -18,8 +18,8 @@ template <typename Real, int k>
 class Doe
 {
  public:
-  static Samples<Real> gen(const int                n_x,
-                           const int                n_dim,
+  static Samples<Real> gen(const int                n_sample,
+                           const int                n_x,
                            const std::vector<Real>& lower = std::vector<Real>(),
                            const std::vector<Real>& upper = std::vector<Real>(),
                            const int                n_obj = 1,
@@ -30,23 +30,22 @@ template <typename Real>
 class Doe<Real, ZERO>
 {
  public:
-  static Samples<Real> gen(const int                n_x,
-                           const int                n_dim,
+  static Samples<Real> gen(const int                n_sample,
+                           const int                n_x,
                            const std::vector<Real>& lower = std::vector<Real>(),
                            const std::vector<Real>& upper = std::vector<Real>(),
                            const int                n_obj = 1,
                            const int                n_con = 0) {
-    Samples<Real> samples(n_x);
+    Samples<Real> samples(n_sample);
     if (upper.empty()) {
       for (auto& s : samples) {
-        s = Sample<Real>(n_dim, n_obj, n_con);
+        s = Sample<Real>(n_x, n_obj, n_con);
       }
     } else {
       for (auto& s : samples) {
-        s = Sample<Real>(
-            std::vector<Real>(n_dim, 0),
-            std::vector<Real>(n_obj, std::numeric_limits<Real>::infinity()),
-            std::vector<Real>(n_con, -1));
+        s = Sample<Real>(n_x, n_obj, n_con);
+        for (int i = 0; i != n_x; ++i)
+          s.x()[i] = lower[i];
       }
     }
     return samples;
@@ -57,27 +56,27 @@ template <typename Real>
 class Doe<Real, MC>
 {
  public:
-  static Samples<Real> gen(const int                n_x,
-                           const int                n_dim,
+  static Samples<Real> gen(const int                n_sample,
+                           const int                n_x,
                            const std::vector<Real>& lower = std::vector<Real>(),
                            const std::vector<Real>& upper = std::vector<Real>(),
                            const int                n_obj = 1,
                            const int                n_con = 0) {
-    Samples<Real> samples(n_x);
+    Samples<Real> samples(n_sample);
     for (auto& s : samples) {
-      s = Sample<Real>(n_dim, n_obj, n_con);
+      s = Sample<Real>(n_x, n_obj, n_con);
     }
     if (upper.empty()) {
-      for (int d = 0; d != n_dim; ++d) {
-        for (int i = 0; i != n_x; ++i) {
-          samples[i].x()[d] = Random::get<Real>(0, 1);
+      for (int d = 0; d != n_x; ++d) {
+        for (int i = 0; i != n_sample; ++i) {
+          samples[i].x()[d] = Random.gen<Real>(0, 1);
         }
       }
 
     } else {
-      for (int d = 0; d != n_dim; ++d) {
-        for (int i = 0; i != n_x; ++i) {
-          samples[i].x()[d] = Random::get<Real>(lower[d], upper[d]);
+      for (int d = 0; d != n_x; ++d) {
+        for (int i = 0; i != n_sample; ++i) {
+          samples[i].x()[d] = Random.gen<Real>(lower[d], upper[d]);
         }
       }
     }
@@ -89,35 +88,35 @@ template <typename Real>
 class Doe<Real, LHS>
 {
  public:
-  static Samples<Real> gen(const int                n_x,
-                           const int                n_dim,
+  static Samples<Real> gen(const int                n_sample,
+                           const int                n_x,
                            const std::vector<Real>& lower = std::vector<Real>(),
                            const std::vector<Real>& upper = std::vector<Real>(),
                            const int                n_obj = 1,
                            const int                n_con = 0) {
-    Samples<Real> samples(n_x);
+    Samples<Real> samples(n_sample);
     for (auto& s : samples) {
-      s = Sample<Real>(n_dim, n_obj, n_con);
+      s = Sample<Real>(n_x, n_obj, n_con);
     }
-    std::vector<int> list(n_x);
+    std::vector<int> list(n_sample);
     int              i = 0;
     for (auto& t : list)
       t = i++;
     if (upper.empty()) {
-      for (int d = 0; d != n_dim; ++d) {
-        Random::shuffle(list);
-        for (int i = 0; i != n_x; ++i) {
-          samples[i].x()[d] = (Random::get<Real>(0, 1) + list[i]) / n_x;
+      for (int d = 0; d != n_x; ++d) {
+        Random.shuffle(list);
+        for (int i = 0; i != n_sample; ++i) {
+          samples[i].x()[d] = (Random.gen<Real>(0, 1) + list[i]) / n_sample;
         }
       }
 
     } else {
-      for (int d = 0; d != n_dim; ++d) {
-        Random::shuffle(list);
+      for (int d = 0; d != n_x; ++d) {
+        Random.shuffle(list);
         Real range = upper[d] - lower[d];
-        for (int i = 0; i != n_x; ++i) {
+        for (int i = 0; i != n_sample; ++i) {
           samples[i].x()[d] =
-              lower[d] + range * (Random::get<Real>(0, 1) + list[i]) / n_x;
+              lower[d] + range * (Random.gen<Real>(0, 1) + list[i]) / n_sample;
         }
       }
     }

@@ -1,13 +1,13 @@
 #ifndef METAOPT_OPTIMIZER_GP_H
 #define METAOPT_OPTIMIZER_GP_H
 #include "optimizer.h"
-
+#include "random.h"
 namespace MetaOpt {
 template <typename Real>
 class Ga : public Optimizer<Real>
 {
  public:
-  Ga(const int                n_dim = 0,
+  Ga(const int                n_x = 0,
      const int                n_obj = 1,
      const int                n_con = 0,
      const Func<Real>         func = nullptr,
@@ -39,6 +39,11 @@ class Ga : public Optimizer<Real>
   Real             i_mutation_;
   Real             i_crossover_;
   Real             nm = 1, nc = 1;
+  // RandomClass           Random;
+  // std::mt19937_64    gen;
+  // inline double randomDouble(double a, double b) {
+  //   return (b - a) * gen() / gen.max() + a;
+  // }
 };
 
 }  // namespace MetaOpt

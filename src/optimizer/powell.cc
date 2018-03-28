@@ -9,8 +9,8 @@ namespace MetaOpt {
 
 template <typename Real>
 void Powell<Real>::InitDirec(Real** direc) {
-  for (unsigned int i = 0; i != this->n_dim_; ++i) {
-    for (unsigned int j = 0; j != this->n_dim_; ++j) {
+  for (unsigned int i = 0; i != this->n_x_; ++i) {
+    for (unsigned int j = 0; j != this->n_x_; ++j) {
       direc[i][j] = 0;
     }
     direc[i][i] = 1.0;
@@ -18,8 +18,8 @@ void Powell<Real>::InitDirec(Real** direc) {
 }
 template <typename Real>
 void Powell<Real>::InitReverseDirec(Real** direc) {
-  for (unsigned int i = 0; i != this->n_dim_; ++i) {
-    for (unsigned int j = 0; j != this->n_dim_; ++j) {
+  for (unsigned int i = 0; i != this->n_x_; ++i) {
+    for (unsigned int j = 0; j != this->n_x_; ++j) {
       direc[i][j] = 0;
     }
     direc[i][i] = -1.0;
@@ -27,9 +27,9 @@ void Powell<Real>::InitReverseDirec(Real** direc) {
 }
 template <typename Real>
 void Powell<Real>::InitRandomDirec(Real** direc) {
-  for (unsigned int i = 0; i != this->n_dim_; ++i) {
-    for (unsigned int j = 0; j != this->n_dim_; ++j) {
-      direc[i][j] = Random::get<Real>(0, 1);
+  for (unsigned int i = 0; i != this->n_x_; ++i) {
+    for (unsigned int j = 0; j != this->n_x_; ++j) {
+      direc[i][j] = Random.gen<Real>(0, 1);
     }
   }
 }
@@ -39,7 +39,7 @@ Real Powell<Real>::f1dim2(Real          alpha,
                           Sample<Real>& x,
                           Real*         p,
                           Sample<Real>& temp) {
-  for (int j = 0; j != this->n_dim_; ++j) {
+  for (int j = 0; j != this->n_x_; ++j) {
     temp.x()[j] = x.x()[j] + alpha * p[j];
   }
   this->evaluate(temp);
@@ -156,7 +156,7 @@ void Powell<Real>::LineSearch(Sample<Real>& x, Real* direc) {
       std::bind(&Powell<Real>::f1dim2, this, placeholders::_1, x, direc, tempx);
   Mnbrak(xa, xx, xb, fa, f, fb, func1d);
   x.obj()[0] = Brent(xa, xx, xb, tol, xmin, func1d);
-  for (j = 0; j != this->n_dim_; ++j) {
+  for (j = 0; j != this->n_x_; ++j) {
     direc[j] = xmin * direc[j];
     x.x()[j] = x.x()[j] + direc[j];
   }
@@ -173,7 +173,7 @@ int Powell<Real>::evolve(Sample<Real>& x0,
   int          ret = 0;
   Sample<Real> x1 = this->sample();
   Sample<Real> x2 = this->sample();
-  Real*        direc1 = new Real[this->n_dim_];
+  Real*        direc1 = new Real[this->n_x_];
   int          bigind;
   Real         t, temp, fx, delta, fx2;
   Real&        fval = x0.obj()[0];
@@ -182,7 +182,7 @@ int Powell<Real>::evolve(Sample<Real>& x0,
     fx = fval;
     bigind = 0;
     delta = 0.0;
-    for (unsigned int i = 0; i < this->n_dim_; i++) {
+    for (unsigned int i = 0; i < this->n_x_; i++) {
       fx2 = fval;
       LineSearch(x0, direc[i]);
       if (fval < terminalLine) {
@@ -199,7 +199,7 @@ int Powell<Real>::evolve(Sample<Real>& x0,
       break;
     }
     // Construct the extrapolated point
-    for (unsigned int j = 0; j != this->n_dim_; ++j) {
+    for (unsigned int j = 0; j != this->n_x_; ++j) {
       direc1[j] = x0.x()[j] - x1.x()[j];
       x2.x()[j] = x0.x()[j] + direc1[j];
     }
@@ -217,9 +217,9 @@ int Powell<Real>::evolve(Sample<Real>& x0,
           ret = iter;
           break;
         }
-        for (unsigned int j = 0; j != this->n_dim_; ++j) {
-          direc[bigind][j] = direc[this->n_dim_ - 1][j];
-          direc[this->n_dim_ - 1][j] = direc1[j];
+        for (unsigned int j = 0; j != this->n_x_; ++j) {
+          direc[bigind][j] = direc[this->n_x_ - 1][j];
+          direc[this->n_x_ - 1][j] = direc1[j];
         }
       }
     }
@@ -249,10 +249,10 @@ void Powell<Real>::opt(Sample<Real>& x0,
                        int           maxiter,
                        int           iter,
                        Real          terminalLine) {
-  Real** direc = new Real*[this->n_dim_];
-  direc[0] = new Real[this->n_dim_ * this->n_dim_];
-  for (unsigned int i = 1; i != this->n_dim_; ++i)
-    direc[i] = direc[i - 1] + this->n_dim_;
+  Real** direc = new Real*[this->n_x_];
+  direc[0] = new Real[this->n_x_ * this->n_x_];
+  for (unsigned int i = 1; i != this->n_x_; ++i)
+    direc[i] = direc[i - 1] + this->n_x_;
   Real fbest;
   bool flip = true;
   for (int i = 0; i < 100; ++i) {

@@ -14,13 +14,13 @@ template <typename Real>
 class Optimizer
 {
  public:
-  Optimizer(const int                n_dim = 0,
+  Optimizer(const int                n_x = 0,
             const int                n_obj = 1,
             const int                n_con = 0,
             const Func<Real>         func = nullptr,
             const std::vector<Real>& lower = std::vector<Real>(),
             const std::vector<Real>& upper = std::vector<Real>())
-      : n_dim_(n_dim),
+      : n_x_(n_x),
         n_obj_(n_obj),
         n_con_(n_con),
         func_(func),
@@ -29,7 +29,7 @@ class Optimizer
         n_evaluation_(0) {
     best_ = std::move(sample());
     if (!upper_.empty()) {
-      for (int i = 0; i != n_dim_; ++i) {
+      for (int i = 0; i != n_x_; ++i) {
         if (upper_[i] < lower_[i]) {
           std::swap(upper_[i], lower_[i]);
         }
@@ -38,15 +38,12 @@ class Optimizer
   };
   ~Optimizer(){};
   Sample<Real> sample() {
-    std::vector<Real> x(n_dim_, 0);
+    Sample<Real> x(n_x_, n_obj_, n_con_);
     if (!upper_.empty()) {
-      for (int i = 0; i != n_dim_; ++i)
-        x[i] = Random::get<Real>(lower_[i], upper_[i]);
+      for (int i = 0; i != n_x_; ++i)
+        x.x()[i] = Random.gen<Real>(lower_[i], upper_[i]);
     }
-    return Sample<Real>(
-        std::move(x),
-        std::vector<Real>(n_obj_, std::numeric_limits<Real>::infinity()),
-        std::vector<Real>(n_con_, -1));
+    return x;
   };
   Sample<Real> get_best() { return best_; };
   void         set_func(Func<Real> func) { func_ = func; };
@@ -62,7 +59,7 @@ class Optimizer
     ++n_evaluation_;
   };
   void              opt();
-  int               n_dim_;
+  int               n_x_;
   int               n_obj_;
   int               n_con_;
   Func<Real>        func_;

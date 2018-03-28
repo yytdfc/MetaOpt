@@ -10,7 +10,7 @@ template <typename Real>
 class BayesOpt : public Optimizer<Real>
 {
  public:
-  BayesOpt(const int               n_dim = 0,
+  BayesOpt(const int               n_x = 0,
            const int               n_obj = 1,
            const int               n_con = 0,
            const Func<Real>        func = nullptr,

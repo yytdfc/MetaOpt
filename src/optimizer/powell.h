@@ -7,8 +7,8 @@ template <typename Real>
 class Powell : public Optimizer<Real>
 {
  public:
-  Powell(const int n_dim = 0, const Func<Real> func = nullptr)
-      : Optimizer<Real>(n_dim, 1, 0, func){};
+  Powell(const int n_x = 0, const Func<Real> func = nullptr)
+      : Optimizer<Real>(n_x, 1, 0, func){};
   ~Powell(){};
   void SetFx(std::function<Real(Real* x)>);
   void SetBracktRange(Real range);

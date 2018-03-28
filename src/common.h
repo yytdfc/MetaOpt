@@ -8,8 +8,9 @@
 // glog
 #include <glog/logging.h>
 // random
-#include "random.hpp"
-using Random = effolkronium::random_static;
+#include "random.h"
+// #include "random.hpp"
+// using Random = effolkronium::random_static;
 
 // ostream
 template <typename T>

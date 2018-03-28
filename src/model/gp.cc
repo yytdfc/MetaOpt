@@ -25,7 +25,7 @@ void Gp<Real>::init(const Samples<Real>& samples) {
       f_dim_ = 1;
       break;
     case 2:
-      f_dim_ = 1 + this->n_dim_;
+      f_dim_ = 1 + this->n_x_;
       break;
   }
   // k = | C F |
@@ -91,7 +91,7 @@ void Gp<Real>::obj_mle(Real* length_scale, Real* obj, Real* con) {
   // // i_order_ = 2
   if (i_order_ == 2) {
     for (int i = 0; i != this->n_sample_; ++i) {
-      for (int j = 0; j < this->n_dim_; j++) {
+      for (int j = 0; j < this->n_x_; j++) {
         k_(i, this->n_sample_ + j + 1) = k_(this->n_sample_ + j + 1, i) =
             this->samples_[i].x()[j];
         k_(this->n_sample_ + j + 1, this->n_sample_ + j + 1) = mu_;
@@ -105,25 +105,24 @@ void Gp<Real>::obj_mle(Real* length_scale, Real* obj, Real* con) {
   }
   ldlt_.reset(new LDLT<Ref<Matrixx<Real>>>(k_));
   alpha_ = ldlt_->solve(y);
+  sigma_ = (y.transpose() * alpha_)(0, 0) / this->n_sample_;
   // var = ldlt_->solve(k_);
   // LOG(INFO) << "LDLT\n" << k_;
   // LOG(INFO) << "alpha_\n" << alpha_;
   Matrixx<Real> diag = ldlt_->vectorD();
   Real          log_diag = 0.0;
-  for (int i = 0; i != this->n_sample_; ++i) {
-    // log_diag += log(diag(i, 0));
-    log_diag += log(max(diag(i, 0), mu_));
+  if (length_scale != &length_scale_) {
+    for (int i = 0; i != this->n_sample_; ++i) {
+      // log_diag += log(diag(i, 0));
+      log_diag += log(max(diag(i, 0), mu_));
+    }
+    Real log_likehood = -0.5 * (y.transpose() * alpha_)(0, 0);
+    // LOG(INFO) << "log_diag: " << log_diag << ", yTa: " << log_likehood
+    //           << ", log2pi: " << this->n_sample_ / 2 * log(2
+    //           * 3.141592653589793);
+    log_likehood -= log_diag;
+    log_likehood -= this->n_sample_ / 2 * log(2 * 3.14159265354);
   }
-  sigma_ = (y.transpose() * alpha_)(0, 0) / this->n_sample_;
-
-  Real log_likehood = -0.5 * (y.transpose() * alpha_)(0, 0);
-  // LOG(INFO) << "log_diag: " << log_diag << ", yTa: " << log_likehood
-  //           << ", log2pi: " << this->n_sample_ / 2 * log(2
-  //           * 3.141592653589793);
-
-  log_likehood -= log_diag;
-  log_likehood -= this->n_sample_ / 2 * log(2 * 3.14159265354);
-
   // sigma_ =  / this->n_sample_;
   obj[0] = (log(sigma_) * this->n_sample_ + log_diag);
   // LOG(INFO) << "length_scale: " << *length_scale << ", sigma: " << sigma_
@@ -133,13 +132,13 @@ void Gp<Real>::obj_mle(Real* length_scale, Real* obj, Real* con) {
 
 template <typename Real>
 void Gp<Real>::evaluate(Sample<Real>& sample, vector<Real>& mse) {
-  vector<Real> x(this->n_dim_);
+  vector<Real> x(this->n_x_);
   if (this->i_norm_) {
-    for (int i = 0; i != this->n_dim_; ++i) {
+    for (int i = 0; i != this->n_x_; ++i) {
       x[i] = (sample.x()[i] - this->mean_[i]) / this->st_[i];
     }
   } else {
-    for (int i = 0; i != this->n_dim_; ++i) {
+    for (int i = 0; i != this->n_x_; ++i) {
       x[i] = sample.x()[i];
     }
   }
@@ -151,7 +150,7 @@ void Gp<Real>::evaluate(Sample<Real>& sample, vector<Real>& mse) {
     k(this->n_sample_, 0) = 1;
   }
   if (i_order_ == 2) {
-    for (int i = 0; i < this->n_dim_; i++) {
+    for (int i = 0; i < this->n_x_; i++) {
       k(this->n_sample_ + i + 1, 0) = x[i];
     }
   }
