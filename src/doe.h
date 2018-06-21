@@ -12,7 +12,7 @@ enum DoeEnum {
   LHS,   // 2 Latin Hypercubic Sampling
 };
 
-template <typename Real, int k>
+template <typename Real, int k = 1>
 class Doe
 {
  public:

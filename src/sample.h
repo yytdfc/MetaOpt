@@ -39,6 +39,16 @@ class Sample
     con_ = move(s.con_);
     return *this;
   };
+  const Real operator[](std::size_t i) const {
+    if(i<x_.size())
+      return x_[i];
+    else if(i<x_.size()+obj_.size())
+      return obj_[i-x_.size()];
+    else if(i<x_.size()+obj_.size()+con_.size())
+      return obj_[i-x_.size()-obj_.size()];
+    else
+      return 0;
+  }
   void swap(Sample& s) {
     auto t(std::move(*this));
     *this = std::move(s);

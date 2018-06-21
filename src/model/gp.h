@@ -2,7 +2,6 @@
 #define METAOPT_MODEL_GP_H
 
 #include <eigen3/Eigen/Core>
-// #include <pybind11/pybind11.h>
 #include "model.h"
 
 namespace MetaOpt {

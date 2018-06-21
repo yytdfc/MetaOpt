@@ -68,11 +68,6 @@ int main() {
   // constexpr int DIM = 1;
   // using Real = double;
 
-  // auto ss = MetaOpt::Doe::gen<Real>(10, DIM, 1, 0);
-  // // cout << ss << endl;
-  // // cout << std::numeric_limits<Real>::min() << " : "<< std::numeric_limits<Real>::max()<< endl;
-  // for(auto& s: ss)
-  //   s.evaluate(test_fun<Real>);
   // // MetaOpt::Gp<Real> m(ss);
   // auto start = system_clock::now();
   // MetaOpt::Gp<Real> m;
