@@ -23,8 +23,18 @@ aux_source_directory(src/optimizer  SRC_OPT)
 add_library(metaopt SHARED ${SRC} ${SRC_DOE} ${SRC_MOD} ${SRC_OPT})
 target_link_libraries(metaopt glog)
 
-add_executable(numerical example/numerical_case/numerical.cc )
+# add_executable(numerical example/numerical_case/numerical.cc )
+# target_link_libraries(numerical glog metaopt)
 
-target_link_libraries(numerical glog metaopt)
 
-
+find_package(GTest REQUIRED)
+include_directories(${GTEST_INCLUDE_DIRS})
+aux_source_directory(test      TEST)
+enable_testing()
+foreach(i ${TEST})
+  STRING(REGEX REPLACE ".+/(.+)\\..*" "\\1" CASE_NAME ${i})
+  message(STATUS "Test case : ${CASE_NAME} - ${i}")
+  add_executable(${CASE_NAME} ${i})
+  target_link_libraries(${CASE_NAME} gtest_main gtest pthread glog metaopt)
+  add_test(${CASE_NAME} ${CASE_NAME})
+endforeach(i)
