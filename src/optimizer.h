@@ -41,7 +41,7 @@ class Optimizer
     Sample<Real> x(n_x_, n_obj_, n_con_);
     if (!upper_.empty()) {
       for (int i = 0; i != n_x_; ++i)
-        x.x()[i] = Random.gen<Real>(lower_[i], upper_[i]);
+        x.x()[i] = exd::random::random<Real>(lower_[i], upper_[i]);
     }
     return x;
   };

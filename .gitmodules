@@ -1,0 +1,3 @@
+[submodule "third-party/exd-cpp"]
+	path = third-party/exd-cpp
+	url = https://github.com/yytdfc/exd-cpp.git

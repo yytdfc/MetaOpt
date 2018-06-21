@@ -1,10 +1,8 @@
 #ifndef METAOPT_DOE_H
 #define METAOPT_DOE_H
 
-#include "random.h"
+#include "exd/random.hpp"
 #include "sample.h"
-
-// using Random = effolkronium::random_static;
 
 namespace MetaOpt {
 
@@ -69,14 +67,14 @@ class Doe<Real, MC>
     if (upper.empty()) {
       for (int d = 0; d != n_x; ++d) {
         for (int i = 0; i != n_sample; ++i) {
-          samples[i].x()[d] = Random.gen<Real>(0, 1);
+          samples[i].x()[d] = exd::random::random<Real>(0, 1);
         }
       }
 
     } else {
       for (int d = 0; d != n_x; ++d) {
         for (int i = 0; i != n_sample; ++i) {
-          samples[i].x()[d] = Random.gen<Real>(lower[d], upper[d]);
+          samples[i].x()[d] = exd::random::random<Real>(lower[d], upper[d]);
         }
       }
     }
@@ -104,19 +102,19 @@ class Doe<Real, LHS>
       t = i++;
     if (upper.empty()) {
       for (int d = 0; d != n_x; ++d) {
-        Random.shuffle(list);
+        exd::random::shuffle(list);
         for (int i = 0; i != n_sample; ++i) {
-          samples[i].x()[d] = (Random.gen<Real>(0, 1) + list[i]) / n_sample;
+          samples[i].x()[d] = (exd::random::random<Real>(0, 1) + list[i]) / n_sample;
         }
       }
 
     } else {
       for (int d = 0; d != n_x; ++d) {
-        Random.shuffle(list);
+        exd::random::shuffle(list);
         Real range = upper[d] - lower[d];
         for (int i = 0; i != n_sample; ++i) {
           samples[i].x()[d] =
-              lower[d] + range * (Random.gen<Real>(0, 1) + list[i]) / n_sample;
+              lower[d] + range * (exd::random::random<Real>(0, 1) + list[i]) / n_sample;
         }
       }
     }

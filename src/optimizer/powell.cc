@@ -29,7 +29,7 @@ template <typename Real>
 void Powell<Real>::InitRandomDirec(Real** direc) {
   for (unsigned int i = 0; i != this->n_x_; ++i) {
     for (unsigned int j = 0; j != this->n_x_; ++j) {
-      direc[i][j] = Random.gen<Real>(0, 1);
+      direc[i][j] = exd::random::random<Real>(0, 1);
     }
   }
 }

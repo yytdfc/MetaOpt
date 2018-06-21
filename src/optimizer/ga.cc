@@ -33,7 +33,7 @@ template <typename Real>
 void Ga<Real>::opt() {
   for (i_generation_ = 0; i_generation_ < n_generation_; ++i_generation_) {
     statistics();
-    Random.shuffle(tourlist_);
+    exd::random::shuffle(tourlist_);
     for (int k = 0; k != n_population_; ++k) {
       newpop_[k] = select(population_[k], population_[tourlist_[k]]);
       // newpop_[k] = population_[k];
@@ -86,17 +86,17 @@ void Ga<Real>::crossover(Sample<Real>& s1, Sample<Real>& s2) {
   switch (1) {
     case 0:
       for (int i = 0; i != this->n_x_; ++i) {
-        if (Random.gen<Real>(0, 1) < p_crossover_) {
+        if (exd::random::random<Real>(0, 1) < p_crossover_) {
           Real dif = s2.x()[i] - s1.x()[i];
-          s2.x()[i] = s1.x()[i] + Random.gen<Real>(0, 1) * dif;
-          s1.x()[i] = s1.x()[i] + Random.gen<Real>(0, 1) * dif;
+          s2.x()[i] = s1.x()[i] + exd::random::random<Real>(0, 1) * dif;
+          s1.x()[i] = s1.x()[i] + exd::random::random<Real>(0, 1) * dif;
           ++i_crossover_;
         }
       }
       break;
     case 1:
       for (int i = 0; i != this->n_x_; ++i) {
-        if (Random.gen<Real>(0, 1) < p_crossover_) {
+        if (exd::random::random<Real>(0, 1) < p_crossover_) {
           auto& x1i = s1.x()[i];
           auto& x2i = s2.x()[i];
           if (x1i > x2i) swap(x1i, x2i);
@@ -109,7 +109,7 @@ void Ga<Real>::crossover(Sample<Real>& s1, Sample<Real>& s2) {
               1 + 2 / dif * min(x1i - this->lower_[i], this->upper_[i] - x2i);
           Real alpha = 2 - pow(beta, -(nc + 1));
           if (alpha > 2 - 1e-6) alpha = 2 - 1e-6;
-          alpha *= Random.gen<Real>(0, 1);
+          alpha *= exd::random::random<Real>(0, 1);
           if (alpha <= 1)
             beta = pow(alpha, 1.0 / (nc + 1));
           else
@@ -118,11 +118,11 @@ void Ga<Real>::crossover(Sample<Real>& s1, Sample<Real>& s2) {
           x1i = mid - 0.5 * beta * dif;
           x2i = mid + 0.5 * beta * dif;
           if (isnan(x1i) || isinf(x1i))
-            x1i = Random.gen<Real>(this->lower_[i], this->upper_[i]);
+            x1i = exd::random::random<Real>(this->lower_[i], this->upper_[i]);
           if (x1i > this->upper_[i]) x1i = this->upper_[i];
           if (x1i < this->lower_[i]) x1i = this->lower_[i];
           if (isnan(x2i) || isinf(x2i))
-            x2i = Random.gen<Real>(this->lower_[i], this->upper_[i]);
+            x2i = exd::random::random<Real>(this->lower_[i], this->upper_[i]);
           if (x2i > this->upper_[i]) x2i = this->upper_[i];
           if (x2i < this->lower_[i]) x2i = this->lower_[i];
           ++i_crossover_;
@@ -137,16 +137,16 @@ void Ga<Real>::mutation(Sample<Real>& s) {
   switch (1) {
     case 0:
       for (int i = 0; i != this->n_x_; ++i) {
-        if (Random.gen<Real>(0, 1) < p_mutation_) {
-          s.x()[i] = Random.gen<Real>(this->lower_[i], this->upper_[i]);
+        if (exd::random::random<Real>(0, 1) < p_mutation_) {
+          s.x()[i] = exd::random::random<Real>(this->lower_[i], this->upper_[i]);
           ++i_mutation_;
         }
       }
     case 1:
       for (int i = 0; i != this->n_x_; ++i) {
-        if (Random.gen<Real>(0, 1) < p_mutation_) {
+        if (exd::random::random<Real>(0, 1) < p_mutation_) {
           auto& xi = s.x()[i];
-          Real  u = Random.gen<Real>(0, 1);
+          Real  u = exd::random::random<Real>(0, 1);
           Real  deltamax = this->upper_[i] - this->lower_[i];
           Real  delta =
               min(xi - this->lower_[i], this->upper_[i] - xi) / deltamax;
@@ -161,7 +161,7 @@ void Ga<Real>::mutation(Sample<Real>& s) {
           }
           xi += delta * deltamax;
           if (isnan(xi) || isinf(xi))
-            xi = Random.gen<Real>(this->lower_[i], this->upper_[i]);
+            xi = exd::random::random<Real>(this->lower_[i], this->upper_[i]);
           if (xi > this->upper_[i])
             xi = this->upper_[i];
           else if (xi < this->lower_[i])
